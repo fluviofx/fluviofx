@@ -8,7 +8,7 @@ FluvioFX is currently in early active development. While we will try to maintain
 
 ### Additional performance considerations
 
-Unity's Visual Effect Graph has a key limitation preventing the implementation of a broadphase step in the physics simulation. This has a severe impact on performance about ~1000 particles (depending on the system). We expect to fix this as soon as we get or figure out a possible resolution. (See #1 for details)
+Unity's Visual Effect Graph has a key limitation preventing the implementation of a broadphase step in the physics simulation. This has a severe impact on performance about ~1000 particles (depending on the system). We expect to fix this as soon as we get or figure out a possible resolution. (See [#1](https://github.com/thinksquirrel/fluviofx/issues/1) for details)
 
 ## Installation
 
