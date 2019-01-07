@@ -1,0 +1,7 @@
+{
+    "csharpfixformat.style.braces.allowInlines": false,
+    "csharpfixformat.style.newline.atEnd": true,
+    "csharpfixformat.style.newline.elseCatch": true,
+    "csharpfixformat.style.spaces.beforeParenthesis": false,
+    "csharpfixformat.style.braces.onSameLine": false
+}

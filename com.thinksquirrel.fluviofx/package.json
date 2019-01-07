@@ -1,0 +1,35 @@
+{
+  "name": "com.thinksquirrel.fluviofx",
+  "version": "0.1.0",
+  "description": "FluvioFX provides full fluid simulation for Unity's Visual Effect Graph.",
+  "keywords": [
+    "cfd",
+    "effect",
+    "fluiddynamics",
+    "fluidsimulation",
+    "fluvio",
+    "graph",
+    "particles",
+    "physics",
+    "sph",
+    "vfx",
+    "visualeffect"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Thinksquirrel Inc.",
+    "email": "support@getfluv.io",
+    "url": "https://github.com/thinksquirrel/fluviofx"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@github.com/thinksquirrel/fluviofx.git"
+  },
+  "dependencies": {
+    "com.unity.visualeffectgraph": "4.6.0-preview"
+  },
+  "category": "Unity",
+  "displayName": "FluvioFX",
+  "repoPackagePath": "com.thinksquirrel.fluviofx",
+  "unity": "2018.3"
+}
