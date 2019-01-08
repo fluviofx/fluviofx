@@ -2,9 +2,13 @@
 
 ![FluvioFX logo](./Documentation~/images/logo.png)
 
-## 🚧 Active development
+## 🚧 Active development 🚧
 
 FluvioFX is currently in early active development. While we will try to maintain backwards compatibility, until 1.0 certain features may be added or removed at any time. Use in larger production projects with care.
+
+## Requirements
+
+Since Unity's Visual Effect Graph currently requires HDRP, FluvioFX requires it as well. It must be installed and configured separately (see _[The High Definition Render Pipeline: Getting Started Guide for Artists](https://blogs.unity3d.com/2018/09/24/the-high-definition-render-pipeline-getting-started-guide-for-artists/)_ for more information)
 
 ### Additional performance considerations
 
