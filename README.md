@@ -1,6 +1,6 @@
 # FluvioFX
 
-![FluvioFX logo](./Documentation/images/logo.png)
+![FluvioFX logo](./Documentation/~images/logo.png)
 
 ## 🚧 Active development
 
@@ -25,7 +25,7 @@ Currently, FluvioFX requires a small patch that must be added to the Visual Effe
 1. Run _Tools > FluvioFX > Install/Reinstall..._
 2. If the above menu is missing or any files are still broken, try to uninstall and reinstall both FluvioFX and the Visual Effect Graph
 
-This workaround will be removed once the VFX Graph's API has been finalized. See [FluvioFXInstall.cs](./com.thinksquirrel.fluviofx/Install/FluvioFXInstall.cs) for the full implementation.
+This workaround will be removed once the VFX Graph's API has been finalized. See [FluvioFXInstall.cs](./Install/FluvioFXInstall.cs) for the full implementation.
 
 ## Getting started
 
@@ -33,7 +33,7 @@ To create a new fluid VFX asset, navigate to _Assets > Create > Visual Effects >
 
 ## Documentation
 
-~~See full documentaion [here](./Documentation/index.md).~~ Documentation is coming soon!
+~~See full documentaion [here](./Documentation~/index.md).~~ Documentation is coming soon!
 
 ## Examples
 
@@ -41,4 +41,4 @@ Coming soon!
 
 ## License
 
-[MIT](./com.thinksquirrel.fluviofx/LICENSE.md)
+[MIT](./LICENSE.md)
