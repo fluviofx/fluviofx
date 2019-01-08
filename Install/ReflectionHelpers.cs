@@ -49,9 +49,6 @@ namespace Thinksquirrel.FluvioFX.Install
                 }
                 else if (assembly.FullName.StartsWith("UnityEditor"))
                 {
-                    // HACK
-                    if (type.Name == "CSharpNamespaceParser") continue;
-
                     _editorTypeMap[type.Name] = type;
                 }
             }

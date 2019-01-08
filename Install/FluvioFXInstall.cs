@@ -99,13 +99,13 @@ MonoImporter:
             var integrationFileExists = File.Exists($"{vfxPath}/Editor/FluvioFXIntegration.cs");
 
             // VFXCodeGenerator.cs can't be found
-            var vfxCodeGenDir = $"{vfxPath}/Editor/Compiler";
-            var vfxCodeGenFileName = "VFXCodeGenerator.cs";
-            var vfxCodeGenPath = $"{vfxCodeGenDir}/{vfxCodeGenFileName}";
+            var vfxCodeGenPath = $"{vfxPath}/Editor/Compiler/VFXCodeGenerator.cs";
             string vfxCodeGenFile;
             try
             {
-                vfxCodeGenFile = File.ReadAllText(vfxCodeGenPath);
+                vfxCodeGenFile = File
+                    .ReadAllText(vfxCodeGenPath)
+                    .Replace("\r\n", "\n");
             }
             catch
             {
@@ -136,19 +136,20 @@ MonoImporter:
             {
                 // Modify VFXCodeGenerator.cs
                 vfxCodeGenFile = vfxCodeGenFile
-                    .Replace(codeGenEventCallReplace, codeGenEventCall)
-                    .Replace(codeGenEventReplace, codeGenEvent)
-                    .Replace(codeGenEventCall, codeGenEventCallReplace)
-                    .Replace(codeGenEvent, codeGenEventReplace);
+                    .Replace(codeGenEventCallReplace.Replace("\r\n", "\n"), codeGenEventCall.Replace("\r\n", "\n"))
+                    .Replace(codeGenEventReplace.Replace("\r\n", "\n"), codeGenEvent.Replace("\r\n", "\n"))
+                    .Replace(codeGenEventCall.Replace("\r\n", "\n"), codeGenEventCallReplace.Replace("\r\n", "\n"))
+                    .Replace(codeGenEvent.Replace("\r\n", "\n"), codeGenEventReplace.Replace("\r\n", "\n"));
 
                 try
                 {
-                    SaveFile(vfxCodeGenDir, vfxCodeGenFileName, vfxCodeGenFile);
+                    // Save VFXCodeGenerator.cs
+                    SaveReadOnlyFile(vfxCodeGenPath, vfxCodeGenFile);
 
-                    // Add integration file
+                    // Add FluvioFXIntegration.cs
                     var integrationFilePath = $"{vfxPath}/Editor/FluvioFXIntegration.cs";
-                    File.WriteAllText(integrationFilePath, integrationFile);
-                    File.WriteAllText($"{integrationFilePath}.meta", integrationFileMeta);
+                    SaveReadOnlyFile(integrationFilePath, integrationFile);
+                    SaveReadOnlyFile($"{integrationFilePath}.meta", integrationFileMeta);
 
                     Debug.Log("FluvioFX install successful!");
 
@@ -207,12 +208,13 @@ MonoImporter:
             }
         }
 
-        private static void SaveFile(string directoryName, string filename, string text)
+        private static void SaveReadOnlyFile(string path, string text)
         {
-            var path = Path.Combine(directoryName, filename);
+            path = path.Replace("\\", "/");
 
             File.SetAttributes(path, FileAttributes.Normal);
             File.WriteAllText(path, text);
+            File.SetAttributes(path, FileAttributes.ReadOnly);
         }
     }
 }
