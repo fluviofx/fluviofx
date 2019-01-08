@@ -69,7 +69,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Operators
                     new VFXTexture2DValue(FluvioSolverData ? FluvioSolverData : null),
                     new VFXExpressionCombine(new []
                     {
-                        VFXValue.Constant((float)(FluvioSolverData? FluvioSolverData.width : 0)), VFXValue.Constant((float)(FluvioSolverData ? FluvioSolverData.height : 0))
+                        VFXValue.Constant((float) (FluvioSolverData? FluvioSolverData.width : 0)), VFXValue.Constant((float) (FluvioSolverData ? FluvioSolverData.height : 0))
                     }),
             };
         }

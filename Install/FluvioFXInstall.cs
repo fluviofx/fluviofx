@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Security.AccessControl;
 using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEditorInternal;
@@ -144,7 +143,7 @@ MonoImporter:
 
                 try
                 {
-                    SaveFileWithPermissions(vfxCodeGenDir, vfxCodeGenFileName, vfxCodeGenFile);
+                    SaveFile(vfxCodeGenDir, vfxCodeGenFileName, vfxCodeGenFile);
 
                     // Add integration file
                     var integrationFilePath = $"{vfxPath}/Editor/FluvioFXIntegration.cs";
@@ -208,36 +207,11 @@ MonoImporter:
             }
         }
 
-        private static void SaveFileWithPermissions(string directoryName, string filename, string text)
+        private static void SaveFile(string directoryName, string filename, string text)
         {
             var path = Path.Combine(directoryName, filename);
 
-#if UNITY_EDITOR_WIN
-            var dirInfo = new DirectoryInfo(directoryName);
-            var dirSecurity = dirInfo.GetAccessControl();
-
-            var user = Environment.UserDomainName + "\\" + Environment.UserName;
-            dirSecurity.AddAccessRule(new FileSystemAccessRule(
-                user,
-                FileSystemRights.Read | FileSystemRights.Write | FileSystemRights.Delete,
-                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
-                PropagationFlags.None,
-                AccessControlType.Allow));
-
-            dirInfo.SetAccessControl(dirSecurity);
-#else
-            var chmod = new Process
-            {
-                StartInfo = {
-                UseShellExecute = false,
-                FileName = "chmod",
-                Arguments = "+w \"" + path + "\""
-                }
-            };
-            chmod.Start();
-            chmod.WaitForExit();
-#endif
-
+            File.SetAttributes(path, FileAttributes.Normal);
             File.WriteAllText(path, text);
         }
     }
