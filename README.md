@@ -1,6 +1,6 @@
 # FluvioFX
 
-![FluvioFX logo](./~Documentation/images/logo.png)
+![FluvioFX logo](./Documentation~/images/logo.png)
 
 ## 🚧 Active development
 
