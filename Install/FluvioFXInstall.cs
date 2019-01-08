@@ -64,7 +64,7 @@ MonoImporter:
             Install();
         }
 
-        [MenuItem("Tools/FluvioFX/Install/Reinstall...")]
+        [MenuItem("Tools/FluvioFX/Install...")]
         private static void InstallFluvioFX()
         {
             Install(true);

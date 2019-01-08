@@ -22,7 +22,7 @@ Currently, FluvioFX requires a small patch that must be added to the Visual Effe
 
 **If you have any compiler errors after installing/updating packages**, try the following:
 
-1. Run _Tools > FluvioFX > Install/Reinstall..._
+1. Run _Tools > FluvioFX > Install..._
 2. If the above menu is missing or any files are still broken, try to uninstall and reinstall both FluvioFX and the Visual Effect Graph
 
 This workaround will be removed once the VFX Graph's API has been finalized. See [FluvioFXInstall.cs](./Install/FluvioFXInstall.cs) for the full implementation.
