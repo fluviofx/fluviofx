@@ -126,7 +126,10 @@ MonoImporter:
                 return;
             }
 
-            if (InternalEditorUtility.inBatchMode ||
+            var inBatchMode = InternalEditorUtility.inBatchMode;
+            var hasKey = EditorPrefs.HasKey("FluvioFXInstall");
+            var showDialog = !hasKey && !inBatchMode;
+            if (!showDialog ||
                 EditorUtility.DisplayDialog(
                     "FluvioFX Install",
                     "FluvioFX installation requires some minor changes to " +
@@ -151,10 +154,17 @@ MonoImporter:
                     SaveReadOnlyFile(integrationFilePath, integrationFile);
                     SaveReadOnlyFile($"{integrationFilePath}.meta", integrationFileMeta);
 
-                    Debug.Log("FluvioFX install successful!");
-
                     // Add scripting define
                     SetDefine(true);
+
+                    // Set editor prefs
+                    if (!inBatchMode && !hasKey)
+                    {
+                        Debug.Log("FluvioFX install successful!");
+                        EditorPrefs.SetBool("FluvioFXInstall", true);
+                    }
+
+                    // Refresh
                     AssetDatabase.Refresh();
                 }
                 catch (Exception ex)
@@ -212,7 +222,10 @@ MonoImporter:
         {
             path = path.Replace("\\", "/");
 
-            File.SetAttributes(path, FileAttributes.Normal);
+            if (File.Exists(path))
+            {
+                File.SetAttributes(path, FileAttributes.Normal);
+            }
             File.WriteAllText(path, text);
             File.SetAttributes(path, FileAttributes.ReadOnly);
         }
