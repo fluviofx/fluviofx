@@ -8,6 +8,8 @@ FluvioFX is currently in early active development. While we will try to maintain
 
 ## Requirements
 
+Unity version: 2018.3+
+
 Since Unity's Visual Effect Graph currently requires HDRP, FluvioFX requires it as well. It must be installed and configured separately (see _[The High Definition Render Pipeline: Getting Started Guide for Artists](https://blogs.unity3d.com/2018/09/24/the-high-definition-render-pipeline-getting-started-guide-for-artists/)_ for more information)
 
 ### Additional performance considerations
