@@ -3,15 +3,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Thinksquirrel.FluvioFX.Editor.Integrators;
 using UnityEditor.VFX;
 using UnityEngine;
 using UnityEngine.Experimental.VFX;
 
 namespace Thinksquirrel.FluvioFX.Editor.Blocks
 {
-    [VFXInfo(category = "FluvioFX")]
+    [VFXInfo(category = "FluvioFX/Solver")]
     class IntegrateParticles : FluvioFXBlock
     {
+        [VFXSetting]
+        public IntegrationMode IntegrationMode = IntegrationMode.Verlet;
+
         public override string name
         {
             get
@@ -19,48 +23,23 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
                 return "Integrate Particles";
             }
         }
+
+        protected override IEnumerable<VFXPropertyWithValue> inputProperties =>
+            Integrator.Get(IntegrationMode).GetInputProperties();
+
         public override IEnumerable<VFXNamedExpression> parameters
         {
             get
             {
-                foreach (var p in GetExpressionsFromSlots(this))
+                foreach (var p in GetExpressionsFromSlots(this).Concat(Integrator.Get(IntegrationMode).GetParameters()))
+                {
                     yield return p;
-
-                yield return new VFXNamedExpression(VFXBuiltInExpression.DeltaTime, "dt");
+                }
             }
         }
-        public override IEnumerable<VFXAttributeInfo> attributes
-        {
-            get
-            {
-                yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
-                yield return new VFXAttributeInfo(FluvioFXAttribute.Force, VFXAttributeMode.Read);
-                yield return new VFXAttributeInfo(VFXAttribute.Velocity, VFXAttributeMode.ReadWrite);
-            }
-        }
-#pragma warning disable 649
-        public class InputProperties
-        {
-            [Tooltip("Controls the mass of each fluid particle.")]
-            public float ParticleMass = 7.625f;
-            public Vector4 KernelSize = Vector4.one;
-            public uint SolverIterations = 2;
-        }
-#pragma warning restore 649
-        public override string source => $@"
-float3 t;
-float invMass = 1.0f / ParticleMass;
-float3 acceleration = force * invMass;
-float dtIter = dt * (1.0f / float(SolverIterations));
-for (uint iter = 0; iter < SolverIterations; ++iter)
-{{
-    t = dtIter * acceleration;
-    if (any(isnan(t) || isinf(t)) || dot(t, t) > (FLUVIO_MAX_SQR_VELOCITY_CHANGE * KernelSize.w * KernelSize.w))
-    {{
-        t = 0;
-    }}
 
-    velocity += t;
-}}";
+        public override IEnumerable<VFXAttributeInfo> attributes => Integrator.Get(IntegrationMode).GetAttributes(hasLifetime);
+
+        public override string source => Integrator.Get(IntegrationMode).GetSource();
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,74 +8,63 @@ using UnityEngine;
 using UnityEngine.Experimental.VFX;
 
 namespace Thinksquirrel.FluvioFX.Editor.Blocks
-    {
-        [VFXInfo(category = "FluvioFX")]
-        class DensityPressure : FluvioFXBlock
+{
+    [VFXInfo(category = "FluvioFX/Solver")]
+    class DensityPressure : FluvioFXBlock
+        {
+            public override string name
             {
-                public override string name
+                get
                 {
-                    get
-                    {
-                        return "Density/Pressure";
-                    }
+                    return "Calculate Density and Pressure";
                 }
-                public override IEnumerable<VFXAttributeInfo> attributes
+            }
+
+            public override IEnumerable<VFXAttributeInfo> attributes
+            {
+                get
                 {
-                    get
+                    yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
+                    if (hasLifetime)
                     {
                         yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
-                        yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
-                        // yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.Read);
-                        yield return new VFXAttributeInfo(FluvioFXAttribute.DensityPressure, VFXAttributeMode.Write);
                     }
+                    yield return new VFXAttributeInfo(VFXAttribute.Mass, VFXAttributeMode.Read);
+                    // yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.Read);
+                    yield return new VFXAttributeInfo(FluvioFXAttribute.DensityPressure, VFXAttributeMode.Write);
                 }
-#pragma warning disable 649
-                public class InputProperties
-                {
-                    [Tooltip("Controls the mass of each fluid particle.")]
-                    public float ParticleMass = 7.625f;
-                    [Tooltip("Controls the overall density of the fluid.")]
-                    public float Density = 998.29f;
-                    [Tooltip("Controls the minimum density of any fluid particle. This can be used to help stabilize a low-viscosity fluid.")]
-                    public float MinimumDensity = 499.145f;
-                    [Tooltip("Controls the gas constant of the fluid, which in turn affects the pressure forces applied to particles.")]
-                    public float GasConstant = 0.01f;
-                    public Vector4 KernelSize = Vector4.one;
-                    public Vector4 KernelFactors = Vector4.one;
-                    public Texture2D FluvioSolverData;
-                    public Vector2 FluvioSolverDataSize;
-                }
-#pragma warning restore 649
-                public override string source => $@"
+            }
+            public override string source => $@"
 float3 dist;
 float density = 0;
 #ifdef FLUVIO_INDEX_GRID
 uint neighborIndex;
 for (uint j = 0; j < neighborCount; ++j)
 {{
-    neighborIndex = GetNeighborIndex(FluvioSolverData, FluvioSolverDataSize, index, j);
+    neighborIndex = GetNeighborIndex(solverData_Tex, solverData_TexSize, index, j);
 #else
 float distLenSq;
 for (uint neighborIndex = 0; neighborIndex < nbMax; ++neighborIndex)
 {{
     if (index == neighborIndex) continue;
-    {FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Alive, "neighborAlive", "neighborIndex")}
-    if (!neighborAlive) continue;
+    {(hasLifetime ? FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Alive, "neighborAlive", "neighborIndex") : "")}
+    {(hasLifetime ? "if (!neighborAlive) continue;" : "")}
 #endif
 
     {FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Position, "neighborPosition", "neighborIndex")}
+    {FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Mass, "neighborMass", "neighborIndex")}
 
     dist = position - neighborPosition;
 #ifndef FLUVIO_INDEX_GRID
     distLenSq = dot(dist, dist);
-    if (distLenSq >= KernelSize.y) continue;
+    if (distLenSq >= solverData_KernelSize.y) continue;
 #endif
 
-    density += ParticleMass * Poly6Calculate(dist, KernelFactors.x, KernelSize.y);
+    density += neighborMass * Poly6Calculate(dist, solverData_KernelFactors.x, solverData_KernelSize.y);
 }}
 
 // Write to density/pressure texture
-density = max(density, MinimumDensity);
-densityPressure = float4(density, density, GasConstant * (density - Density), 0);";
+density = max(density, solverData_Fluid_MinimumDensity);
+densityPressure = float4(density, density, solverData_Fluid_GasConstant * (density - solverData_Fluid_Density), 0);";
     }
 }

@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using UnityEditor;
 
-namespace Thinksquirrel.FluvioFX.Install
-{
+[assembly : InternalsVisibleTo("Thinksquirrel.FluvioFX.Editor")]
+[assembly : InternalsVisibleTo("Thinksquirrel.FluvioFX.Install")]
 
+namespace Thinksquirrel.FluvioFX.Editor
+{
     #region Parameters
     struct Parameter
     {

@@ -24,18 +24,18 @@ To install this project, add the following line to `dependencies` in your `manif
 "com.thinksquirrel.fluviofx": "https://github.com/thinksquirrel/fluviofx.git"
 ```
 
-Currently, FluvioFX requires a small patch that must be added to the Visual Effect Graph before usage. This is needed in order to access some internal classes. Once installed, a dialog will pop up to take you through this process. A **FLUVIOFX** compilation file will then be automatically added to the current (and any future) build platforms.
+Currently, FluvioFX requires a small patch that must be added to the Visual Effect Graph package before usage. This is needed in order to access some internal classes. Once imported, this process should happen automatically. A **FLUVIOFX** compilation file will then be automatically added to the current (and any future) build platforms, which will allow Unity to load the FluvioFX assembly.
 
-**If you have any compiler errors after installing/updating packages**, try the following:
+**If you have any compiler errors after importing or reimporting packages**, try the following:
 
 1. Run _Tools > FluvioFX > Install..._
 2. If the above menu is missing or any files are still broken, try to uninstall and reinstall both FluvioFX and the Visual Effect Graph
 
-This workaround will be removed once the VFX Graph's API has been finalized. See [FluvioFXInstall.cs](./Install/FluvioFXInstall.cs) for the full implementation.
+This workaround will be removed once the VFX Graph's API has been finalized. See [FluvioFXInstall.cs](./Install/FluvioFXInstall.cs) for the full implementation, including all file modifications.
 
 ## Getting started
 
-To create a new fluid VFX asset, navigate to _Assets > Create > Visual Effects > FluvioFX Graph_
+To create a new fluid VFX asset, navigate to _Assets > Create > Visual Effects > FluvioFX Graph_.
 
 ## Documentation
 

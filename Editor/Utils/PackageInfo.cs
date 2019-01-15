@@ -10,7 +10,8 @@ namespace Thinksquirrel.FluvioFX.Editor
 {
     public static class PackageInfo
     {
-        static string _packagePath;
+        private static string _packagePath;
+        private static string _templatePath = null;
 
         public static string fileSystemPackagePath
         {
@@ -39,6 +40,18 @@ namespace Thinksquirrel.FluvioFX.Editor
             get
             {
                 return "Packages/com.thinksquirrel.fluviofx";
+            }
+        }
+
+        public static string templatePath
+        {
+            get
+            {
+                if (_templatePath == null)
+                {
+                    _templatePath = $"{assetPackagePath}/Editor/Templates/Fluid Particle System.vfx";
+                }
+                return _templatePath;
             }
         }
     }

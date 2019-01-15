@@ -23,6 +23,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
                 return VFXContextType.kUpdate;
             }
         }
+
         public override VFXDataType compatibleData
         {
             get
@@ -30,6 +31,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
                 return VFXDataType.kParticle;
             }
         }
+
         public override IEnumerable<string> includes
         {
             get
@@ -37,6 +39,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
                 yield return $"{PackageInfo.assetPackagePath}/Shaders/FluvioCompute.cginc";
             }
         }
+
         public override IEnumerable<VFXNamedExpression> parameters
         {
             get
@@ -47,5 +50,14 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
                 }
             }
         }
+
+        protected bool hasLifetime => GetData().IsCurrentAttributeWritten(VFXAttribute.Alive);
+
+#pragma warning disable 649
+        public class InputProperties
+        {
+            public SolverData solverData;
+        }
+#pragma warning restore 649
     }
 }
