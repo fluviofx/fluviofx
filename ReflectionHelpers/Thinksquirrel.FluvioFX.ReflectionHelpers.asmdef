@@ -1,8 +1,6 @@
 {
-    "name": "Thinksquirrel.FluvioFX.Install",
-    "references": [
-        "Thinksquirrel.FluvioFX.ReflectionHelpers"
-    ],
+    "name": "Thinksquirrel.FluvioFX.ReflectionHelpers",
+    "references": [],
     "optionalUnityReferences": [],
     "includePlatforms": [
         "Editor"

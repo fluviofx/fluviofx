@@ -9,7 +9,7 @@ using UnityEngine.Experimental.VFX;
 
 namespace Thinksquirrel.FluvioFX.Editor.Blocks
 {
-    [VFXInfo(category = "FluvioFX")]
+    [VFXInfo(category = "FluvioFX/Solver")]
     class NeighborSearch : FluvioFXBlock
     {
         public override string name
@@ -19,32 +19,30 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
                 return "Neighbor Search";
             }
         }
+
         public override IEnumerable<VFXAttributeInfo> attributes
         {
             get
             {
-                yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
                 yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
+                if (hasLifetime)
+                {
+                    yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
+                }
                 // yield return new VFXAttributeInfo(FluvioFXAttribute.GridIndex, VFXAttributeMode.Read);
                 // yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.Write);
             }
         }
-#pragma warning disable 649
-        public class InputProperties
-        {
-            public Vector4 KernelSize = Vector4.one;
-            public Texture2D FluvioSolverData;
-            public Vector2 FluvioSolverDataSize;
-        }
-#pragma warning restore 649
-        public override string source => $@"
+
+        public override string source =>
+            $@"
 #ifdef FLUVIO_INDEX_GRID
 // TODO: Grid structure/neighbor search is not optimized, due to VFX limitations.
 // At the moment, we are unable to easily pass custom buffers to the system,
 // and not all platforms support texture atomics, which would be required
 // for a true spatial partition
 
-uint3 indexVector = GetGridIndexVector(position, KernelSize.x);
+uint3 indexVector = GetGridIndexVector(position, solverData_KernelSize.x);
 int3 indexVectorOff;
 uint3 indexVectorOffset;
 uint currentGridIndex;
@@ -71,20 +69,24 @@ for (uint candidate = 0; candidate < nbMax; ++candidate)
                 // indices are +1 for GPU grids (0 = not alive)
                 if (candidateGridIndex - 1 == currentGridIndex)
                 {{
-                       {FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Position, "candidatePosition", "candidate")}
-                       dist = candidatePosition - position;
-                       d = dot(dist, dist);
+                    {FluvioFXAttribute.GetLoadAttributeCode(
+                        this,
+                        VFXAttribute.Position,
+                        "candidatePosition",
+                        "candidate")}
+                    dist = candidatePosition - position;
+                    d = dot(dist, dist);
 
-                       if (d < KernelSize.y)
-                       {{
-                           SetNeighborIndex(FluvioSolverData, FluvioSolverDataSize, index, nCount++, candidate);
+                    if (d < solverData_KernelSize.y)
+                    {{
+                        SetNeighborIndex(solverData_Tex, solverData_TexSize, index, nCount++, candidate);
 
-                           if (nCount >= FLUVIO_MAX_NEIGHBORS)
-                           {{
-                               neighborCount = FLUVIO_MAX_NEIGHBORS;
-                               return;
-                           }}
-                       }}
+                        if (nCount >= FLUVIO_MAX_NEIGHBORS)
+                        {{
+                            neighborCount = FLUVIO_MAX_NEIGHBORS;
+                            return;
+                        }}
+                    }}
                 }}
             }}
         }}

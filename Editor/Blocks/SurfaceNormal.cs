@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,66 +8,63 @@ using UnityEngine;
 using UnityEngine.Experimental.VFX;
 
 namespace Thinksquirrel.FluvioFX.Editor.Blocks
-    {
-        [VFXInfo(category = "FluvioFX")]
-        class SurfaceNormal : FluvioFXBlock
+{
+    [VFXInfo(category = "FluvioFX/Solver")]
+    class SurfaceNormal : FluvioFXBlock
+        {
+            public override string name
             {
-                public override string name
+                get
                 {
-                    get
-                    {
-                        return "Surface Normal";
-                    }
+                    return "Calculate Surface Normal";
                 }
-                public override IEnumerable<VFXAttributeInfo> attributes
+            }
+
+            public override IEnumerable<VFXAttributeInfo> attributes
+            {
+                get
                 {
-                    get
+                    yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
+                    if (hasLifetime)
                     {
                         yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
-                        yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
-                        // yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.Read);
-                        yield return new VFXAttributeInfo(FluvioFXAttribute.DensityPressure, VFXAttributeMode.Read);
-                        yield return new VFXAttributeInfo(FluvioFXAttribute.Normal, VFXAttributeMode.Write);
                     }
+                    yield return new VFXAttributeInfo(VFXAttribute.Mass, VFXAttributeMode.Read);
+
+                    // yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.Read);
+                    yield return new VFXAttributeInfo(FluvioFXAttribute.DensityPressure, VFXAttributeMode.Read);
+                    yield return new VFXAttributeInfo(FluvioFXAttribute.Normal, VFXAttributeMode.Write);
                 }
-#pragma warning disable 649
-                public class InputProperties
-                {
-                    [Tooltip("Controls the mass of each fluid particle.")]
-                    public float ParticleMass = 7.625f;
-                    public Vector4 KernelSize = Vector4.one;
-                    public Vector4 KernelFactors = Vector4.one;
-                    public Texture2D FluvioSolverData;
-                    public Vector2 FluvioSolverDataSize;
-                }
-#pragma warning restore 649
-                public override string source => $@"
+            }
+
+            public override string source => $@"
 float3 dist;
 float3 n = 0;
 #ifdef FLUVIO_INDEX_GRID
 uint neighborIndex;
 for (uint j = 0; j < neighborCount; ++j)
 {{
-    neighborIndex = GetNeighborIndex(FluvioSolverData, FluvioSolverDataSize, index, j);
+    neighborIndex = GetNeighborIndex(solverData_Tex, solverData_TexSize, index, j);
 #else
 float distLenSq;
 for (uint neighborIndex = 0; neighborIndex < nbMax; ++neighborIndex)
 {{
     if (index == neighborIndex) continue;
-    {FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Alive, "neighborAlive", "neighborIndex")}
-    if (!neighborAlive) continue;
+    {(hasLifetime ? FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Alive, "neighborAlive", "neighborIndex") : "")}
+    {(hasLifetime ? "if (!neighborAlive) continue;" : "")}
 #endif
 
     {FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Position, "neighborPosition", "neighborIndex")}
+    {FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Mass, "neighborMass", "neighborIndex")}
     {FluvioFXAttribute.GetLoadAttributeCode(this, FluvioFXAttribute.DensityPressure, "neighborDensityPressure", "neighborIndex")}
 
     dist = position - neighborPosition;
 #ifndef FLUVIO_INDEX_GRID
     distLenSq = dot(dist, dist);
-    if (distLenSq >= KernelSize.y) continue;
+    if (distLenSq >= solverData_KernelSize.y) continue;
 #endif
 
-    n += (ParticleMass / neighborDensityPressure.y) * Poly6CalculateGradient(dist, KernelFactors.x, KernelSize.y);
+    n += (neighborMass / neighborDensityPressure.y) * Poly6CalculateGradient(dist, solverData_KernelFactors.x, solverData_KernelSize.y);
 }}
 
 // Write to normal texture

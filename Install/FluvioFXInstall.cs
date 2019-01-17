@@ -9,7 +9,7 @@ using UnityEditorInternal;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace Thinksquirrel.FluvioFX.Install
+namespace Thinksquirrel.FluvioFX.Editor
 {
     [InitializeOnLoad]
     internal static class FluvioFXInstall
@@ -27,6 +27,14 @@ MonoImporter:
   defaultReferences: []
   executionOrder: 0
   icon: { instanceID: 0 }
+  userData:
+  assetBundleName:
+  assetBundleVariant:
+";
+        private const string templateFileMeta = @"fileFormatVersion: 2
+guid: {GUID}
+VisualEffectImporter:
+  externalObjects: {}
   userData:
   assetBundleName:
   assetBundleVariant:
@@ -77,9 +85,7 @@ MonoImporter:
             var vfxPath = GetPackagePath("com.unity.visualeffectgraph");
             if (vfxPath == null)
             {
-                Debug.LogWarning(
-                    "Cannot install FluvioFX. " +
-                    "Is the Visual Effect Graph installed?");
+                Debug.LogWarning("Cannot install FluvioFX. Is the Visual Effect Graph installed?");
                 SetDefine(false);
                 return;
             }
@@ -109,9 +115,7 @@ MonoImporter:
             }
             catch
             {
-                Debug.LogWarning(
-                    "Cannot install FluvioFX. " +
-                    "Unable to open VFXCodeGenerator.cs, which is not supported");
+                Debug.LogWarning("Cannot install FluvioFX. Unable to open VFXCodeGenerator.cs, which is not supported");
                 SetDefine(false);
                 return;
             }
@@ -154,11 +158,18 @@ MonoImporter:
                     SaveReadOnlyFile(integrationFilePath, integrationFile);
                     SaveReadOnlyFile($"{integrationFilePath}.meta", integrationFileMeta);
 
+                    // Copy templates
+                    foreach (var(fluvioTemplatePath, vfxTemplatePath, newGuid) in GetTemplatePaths())
+                    {
+                        CopyReadOnlyFile(fluvioTemplatePath, vfxTemplatePath);
+                        SaveReadOnlyFile($"{vfxTemplatePath}.meta", templateFileMeta.Replace("{GUID}", newGuid));
+                    }
+
                     // Add scripting define
                     SetDefine(true);
 
                     // Set editor prefs
-                    if (!inBatchMode && !hasKey)
+                    if (force || !inBatchMode && !hasKey)
                     {
                         Debug.Log("FluvioFX install successful!");
                         EditorPrefs.SetBool("FluvioFXInstall", true);
@@ -192,6 +203,19 @@ MonoImporter:
             return null;
         }
 
+        private static IEnumerable < (string fluvioPath, string vfxPath, string newGuid) > GetTemplatePaths()
+        {
+            var fluvioRoot = GetPackagePath($"com.thinksquirrel.fluviofx");
+            var vfxRoot = GetPackagePath($"com.unity.visualeffectgraph");
+
+            var template1 = "/Editor/Templates/Fluid Particle System.vfx";
+            yield return (
+                $"{fluvioRoot}{template1}",
+                $"{vfxRoot}{template1}",
+                "f2a9e77d93bc41debe400bd75de79d13"
+            );
+        }
+
         private static void SetDefine(bool add)
         {
             var buildTarget = EditorUserBuildSettings.selectedBuildTargetGroup;
@@ -213,7 +237,7 @@ MonoImporter:
             {
                 PlayerSettings.SetScriptingDefineSymbolsForGroup(
                     buildTarget,
-                    string.Join(";", defines.ToArray())
+                    string.Join(";", defines)
                 );
             }
         }
@@ -228,6 +252,22 @@ MonoImporter:
             }
             File.WriteAllText(path, text);
             File.SetAttributes(path, FileAttributes.ReadOnly);
+        }
+
+        private static void CopyReadOnlyFile(string from, string to)
+        {
+            from = from.Replace("\\", "/");
+            to = to.Replace("\\", "/");
+
+            if (File.Exists(to))
+            {
+                File.SetAttributes(to, FileAttributes.Normal);
+            }
+            if (File.Exists(from))
+            {
+                File.Copy(from, to, true);
+                File.SetAttributes(to, FileAttributes.ReadOnly);
+            }
         }
     }
 }

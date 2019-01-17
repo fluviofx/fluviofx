@@ -10,8 +10,8 @@ namespace Thinksquirrel.FluvioFX.Editor.Kernels
 
         protected override void CalculateFactor()
         {
-            // Factor
-            _factor = VFXValue.Constant(315.0f) / (VFXValue.Constant(64.0f) * VFXValue.Constant(Mathf.PI) * _kernelSize9);
+            _factor =
+                VFXValue.Constant(315.0f) / (VFXValue.Constant(64.0f) * VFXValue.Constant(Mathf.PI) * _kernelSize9);
         }
     }
 }

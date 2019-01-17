@@ -1,3 +1,4 @@
+using System;
 using UnityEditor.VFX;
 using UnityEngine;
 
@@ -21,7 +22,17 @@ namespace Thinksquirrel.FluvioFX.Editor.Kernels
             _kernelSizeSq = kernelSize * kernelSize;
             _kernelSize3 = kernelSize * kernelSize * kernelSize;
             _kernelSize6 = kernelSize * kernelSize * kernelSize * kernelSize * kernelSize * kernelSize;
-            _kernelSize9 = kernelSize * kernelSize * kernelSize * kernelSize * kernelSize * kernelSize * kernelSize * kernelSize * kernelSize;
+            _kernelSize9 =
+                kernelSize *
+                kernelSize *
+                kernelSize *
+                kernelSize *
+                kernelSize *
+                kernelSize *
+                kernelSize *
+                kernelSize *
+                kernelSize;
+
             CalculateFactor();
         }
         public VFXExpression GetFactor()

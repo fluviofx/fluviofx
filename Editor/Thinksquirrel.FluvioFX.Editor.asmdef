@@ -1,7 +1,8 @@
 {
     "name": "Thinksquirrel.FluvioFX.Editor",
     "references": [
-        "Unity.VisualEffectGraph.Editor"
+        "Unity.VisualEffectGraph.Editor",
+        "Thinksquirrel.FluvioFX.ReflectionHelpers"
     ],
     "optionalUnityReferences": [],
     "includePlatforms": [

@@ -9,37 +9,35 @@ using UnityEngine.Experimental.VFX;
 
 namespace Thinksquirrel.FluvioFX.Editor.Blocks
 {
-    [VFXInfo(category = "FluvioFX")]
-    class IndexGrid : FluvioFXBlock
+    [VFXInfo(category = "FluvioFX/Solver")]
+    class SpacePartitioning : FluvioFXBlock
     {
         public override string name
         {
             get
             {
-                return "Index Grid";
+                return "Space Partitioning";
             }
         }
+
         public override IEnumerable<VFXAttributeInfo> attributes
         {
             get
             {
-                yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
                 yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
+                if (hasLifetime)
+                {
+                    yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
+                }
                 // yield return new VFXAttributeInfo(FluvioFXAttribute.GridIndex, VFXAttributeMode.Write);
             }
         }
-#pragma warning disable 649
-        public class InputProperties
-        {
-            public Vector4 KernelSize = Vector4.one;
-            public Texture2D FluvioSolverData;
-            public Vector2 FluvioSolverDataSize;
-        }
-#pragma warning restore 649
-        public override string source => @"
+
+        public override string source =>
+            @"
 #ifdef FLUVIO_INDEX_GRID
 // indices are +1 for GPU grids (0 = not alive)
-gridIndex = GetGridIndexFromPosition(position, KernelSize.x) + 1;
+gridIndex = GetGridIndexFromPosition(position, solverData_KernelSize.x) + 1;
 #endif
 ";
     }

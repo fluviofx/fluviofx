@@ -13,6 +13,7 @@ namespace Thinksquirrel.FluvioFX.Editor
     {
         public static VFXAttribute DensityPressure => new VFXAttribute("densityPressure", VFXValue.Constant<Vector4>());
         public static VFXAttribute Normal => new VFXAttribute("normal", VFXValue.Constant<Vector4>());
+        public static VFXAttribute VorticityTurbulence => new VFXAttribute("vorticityTurbulence", VFXValue.Constant<Vector4>());
         public static VFXAttribute Force => new VFXAttribute("force", VFXValue.Constant<Vector3>());
         public static VFXAttribute GridIndex => new VFXAttribute("gridIndex", VFXValue.Constant<uint>());
         public static VFXAttribute NeighborCount => new VFXAttribute("neighborCount", VFXValue.Constant<uint>());
@@ -20,7 +21,10 @@ namespace Thinksquirrel.FluvioFX.Editor
         {
             var r = new VFXShaderWriter();
             var layout = new StructureOfArrayProvider();
-            r.WriteVariable(attribute.type, name, block.GetData().GetLoadAttributeCode(attribute, VFXAttributeLocation.Current));
+            r.WriteVariable(
+                attribute.type,
+                name,
+                block.GetData().GetLoadAttributeCode(attribute, VFXAttributeLocation.Current));
             var result = r.builder.ToString().Replace("(index *", $"({index} *");
             return result;
         }

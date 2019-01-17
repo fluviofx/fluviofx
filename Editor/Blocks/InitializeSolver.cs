@@ -7,25 +7,30 @@ using UnityEngine;
 
 namespace Thinksquirrel.FluvioFX.Editor.Blocks
 {
-    [VFXInfo(category = "FluvioFX")]
-    class ClearData : FluvioFXBlock
+    [VFXInfo(category = "FluvioFX/Solver")]
+    class InitializeSolver : FluvioFXBlock
     {
         public override string name
         {
             get
             {
-                return "Clear Data";
+                return "Initialize Solver";
             }
         }
+
         public override IEnumerable<VFXAttributeInfo> attributes
         {
             get
             {
+                yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
                 yield return new VFXAttributeInfo(FluvioFXAttribute.Force, VFXAttributeMode.Write);
+                yield return new VFXAttributeInfo(VFXAttribute.Mass, VFXAttributeMode.Write);
+                yield return new VFXAttributeInfo(VFXAttribute.OldPosition, VFXAttributeMode.Write);
                 // yield return new VFXAttributeInfo(FluvioFXAttribute.GridIndex, VFXAttributeMode.Write);
                 // yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.Write);
             }
         }
+
         public override string source => @"
 // Clear forces
 force = 0;
@@ -36,6 +41,13 @@ gridIndex = 0;
 
 // Clear neighbor count
 neighborCount = 0;
+
+// Set mass
+mass = solverData_Fluid_ParticleMass;
+
+// Set old position
+oldPosition = position;
+
 #endif";
     }
 }
