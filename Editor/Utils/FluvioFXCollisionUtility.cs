@@ -18,6 +18,17 @@ namespace Thinksquirrel.FluvioFX.Editor
             [Range(1.0f, 16.0f)]
             public float Resolution = 4.0f;
         }
+
+        public static IEnumerable<string> GetIncludes(
+            IEnumerable<string> baseIncludes)
+        {
+            foreach (var include in baseIncludes)
+            {
+                yield return include;
+            }
+            yield return $"{PackageInfo.assetPackagePath}/Shaders/FluvioCompute.cginc";
+        }
+
         public static IEnumerable<VFXPropertyWithValue> GetInputProperties(
             IEnumerable<VFXPropertyWithValue> baseProperties,
             bool density)
@@ -36,12 +47,12 @@ namespace Thinksquirrel.FluvioFX.Editor
             VFXBlock block,
             IEnumerable<VFXNamedExpression> baseParameters)
         {
-            var expressions = block.parameters;
-            expressions.Concat(FluvioFXBlock.GetSolverDataExpressions(block));
-            expressions.Concat(FluvioFXBlock.GetExpressionsFromSlots(block));
-            foreach (var exp in expressions)
+            var expressions = baseParameters;
+            expressions = expressions.Concat(FluvioFXBlock.GetSolverDataExpressions(block));
+
+            foreach (var expression in expressions)
             {
-                yield return exp;
+                yield return expression;
             };
         }
 
@@ -98,6 +109,9 @@ namespace Thinksquirrel.FluvioFX.Editor
                 // Get proxy particle position
                 offset = float3(x, y, z);
                 proxyPosition = position + offset;
+
+                // Snap to grid to prevent jitter
+                proxyPosition = round(proxyPosition / step) * step;
                 {densityTestSource}
 
                 if (collisionTest)

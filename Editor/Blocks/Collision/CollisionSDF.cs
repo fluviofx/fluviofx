@@ -19,6 +19,8 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
             }
         }
 
+        public override IEnumerable<string> includes =>
+            FluvioFXCollisionUtility.GetIncludes(base.includes);
         public override IEnumerable<VFXNamedExpression> parameters =>
             FluvioFXCollisionUtility.GetParameters(this, base.parameters);
         protected override IEnumerable<VFXPropertyWithValue> inputProperties =>

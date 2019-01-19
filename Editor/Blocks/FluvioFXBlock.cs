@@ -87,7 +87,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
 
             if (initializeBlock)
             {
-                return initializeBlock.parameters.Where((exp) => !exp.name.Contains("_Tex"));
+                return initializeBlock.parameters.Where((expression) => !expression.name.Contains("_Tex"));
             }
             else
             {
