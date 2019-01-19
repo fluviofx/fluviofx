@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Thinksquirrel.FluvioFX.Editor.Blocks;
 using UnityEditor.VFX;
 using UnityEngine;
 using UnityEngine.Experimental.VFX;
@@ -36,35 +37,9 @@ namespace Thinksquirrel.FluvioFX.Editor.Integrators
         {
             get;
         }
-        protected static IEnumerable<VFXPropertyWithValue> PropertiesFromType(Type type)
-        {
-            if (type == null)
-            {
-                return Enumerable.Empty<VFXPropertyWithValue>();
-            }
 
-            var instance = System.Activator.CreateInstance(type);
-            return type.GetFields()
-                .Where(f => !f.IsStatic)
-                .Select(f =>
-                {
-                    var p = new VFXPropertyWithValue();
-                    p.property = new VFXProperty(f);
-                    p.value = f.GetValue(instance);
-                    return p;
-                });
-        }
-
-#pragma warning disable 649
-        private class InputProperties
+        public IEnumerable<VFXPropertyWithValue> GetInputProperties(IEnumerable<VFXPropertyWithValue> baseProperties)
         {
-            public SolverData solverData;
-        }
-#pragma warning restore 649
-
-        public IEnumerable<VFXPropertyWithValue> GetInputProperties()
-        {
-            var baseProperties = PropertiesFromType(typeof(InputProperties));
             foreach (var inputProperty in baseProperties)
             {
                 yield return inputProperty;
@@ -76,7 +51,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Integrators
                 {
                     if (type != null)
                     {
-                        var typeProperties = PropertiesFromType(type);
+                        var typeProperties = FluvioFXBlock.PropertiesFromType(type);
                         foreach (var inputProperty in typeProperties)
                         {
                             yield return inputProperty;
@@ -128,7 +103,7 @@ float3 acceleration = force * invMass;
 float3 v = dt * acceleration;
 
 // Discard excessive velocities
-if (any(isnan(v) || isinf(v)) || dot(v, v) > (FLUVIO_MAX_SQR_VELOCITY_CHANGE * solverData_KernelSize.w * solverData_KernelSize.w))
+if (any(isnan(v) || isinf(v)) || dot(v, v) > FLUVIO_MAX_SQR_VELOCITY_CHANGE)
 {{
     v = 0;
 }}

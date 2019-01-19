@@ -36,10 +36,9 @@ namespace Thinksquirrel.FluvioFX.Editor.Operators
         {
             // UpdateSolverTexture(true);
 
-            // KernelSize: x - h, y - h^2, z - h^3, w - simulation scale
+            // KernelSize: x - h, y - h^2, z - h^3, w - unused
             // KernelFactors: x - poly6, y - spiky, z - viscosity, w - unused
             VFXExpression h = inputExpression[0];
-            VFXExpression simulationScale = VFXValue.Constant(1.0f);
             var poly6 = new Poly6Kernel(h);
             var spiky = new SpikyKernel(h);
             var viscosity = new ViscosityKernel(h);
@@ -52,7 +51,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Operators
                 h,
                 h * h,
                 h * h * h,
-                simulationScale
+                VFXValue.Constant(0.0f)
             }));
             outputExpression.Add(new VFXExpressionCombine(new []
             {
@@ -61,8 +60,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Operators
             outputExpression.Add(new VFXTexture2DValue(Tex ? Tex : null));
             outputExpression.Add(new VFXExpressionCombine(new []
             {
-                VFXValue.Constant((float) (Tex? Tex.width : 0)),
-                    VFXValue.Constant((float) (Tex ? Tex.height : 0))
+                VFXValue.Constant((float) (Tex? Tex.width : 0)), VFXValue.Constant((float) (Tex ? Tex.height : 0))
             }));
 
             return outputExpression.ToArray();

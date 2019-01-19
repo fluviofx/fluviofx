@@ -25,13 +25,13 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
         }
 
         protected override IEnumerable<VFXPropertyWithValue> inputProperties =>
-            Integrator.Get(IntegrationMode).GetInputProperties();
+            Integrator.Get(IntegrationMode).GetInputProperties(base.inputProperties);
 
         public override IEnumerable<VFXNamedExpression> parameters
         {
             get
             {
-                foreach (var p in GetExpressionsFromSlots(this).Concat(Integrator.Get(IntegrationMode).GetParameters()))
+                foreach (var p in base.parameters.Concat(Integrator.Get(IntegrationMode).GetParameters()))
                 {
                     yield return p;
                 }

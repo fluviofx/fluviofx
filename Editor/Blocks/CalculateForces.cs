@@ -20,6 +20,8 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
             public bool Gravity = true;
             [VFXSetting]
             public bool BuoyancyForce = true;
+            [VFXSetting]
+            public bool Collision = true;
 
             public override string name
             {
@@ -59,25 +61,11 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
             {
                 get
                 {
-                    if (SurfaceTension)
-                    {
-                        yield return "#define FLUVIO_SURFACE_TENSION_ENABLED 1";
-                    }
-
-                    if (Turbulence)
-                    {
-                        yield return "#define FLUVIO_TURBULENCE_ENABLED 1";
-                    }
-
-                    if (Gravity)
-                    {
-                        yield return "#define FLUVIO_GRAVITY_ENABLED 1";
-                    }
-
-                    if (BuoyancyForce)
-                    {
-                        yield return "#define FLUVIO_BUOYANCY_FORCE_ENABLED 1";
-                    }
+                    if (SurfaceTension) yield return "#define FLUVIO_SURFACE_TENSION_ENABLED 1";
+                    if (Turbulence) yield return "#define FLUVIO_TURBULENCE_ENABLED 1";
+                    if (Gravity) yield return "#define FLUVIO_GRAVITY_ENABLED 1";
+                    if (BuoyancyForce) yield return "#define FLUVIO_BUOYANCY_FORCE_ENABLED 1";
+                    if (Collision) yield return "#define FLUVIO_COLLISION_ENABLED 1";
                 }
             }
 
@@ -85,6 +73,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
 {string.Join("\n", defines)}
 float3 dist, f, invNeighborDensity;
 float scalar;
+
 #ifdef FLUVIO_INDEX_GRID
 uint neighborIndex;
 for (uint j = 0; j < neighborCount; ++j)
@@ -114,11 +103,21 @@ for (uint neighborIndex = 0; neighborIndex < nbMax; ++neighborIndex)
     if (distLenSq >= solverData_KernelSize.y) continue;
 #endif
 
+#ifdef FLUVIO_COLLISION_ENABLED
     invNeighborDensity = 1.0f / neighborDensityPressure.x;
+#else
+    invNeighborDensity = 1.0f / neighborDensityPressure.y;
+#endif
 
     // Pressure term
+#ifdef FLUVIO_COLLISION_ENABLED
     scalar = neighborMass
         * (densityPressure.z + neighborDensityPressure.z) / (neighborDensityPressure.x * 2.0f);
+#else
+    scalar = neighborMass
+        * (densityPressure.w + neighborDensityPressure.w) / (neighborDensityPressure.y * 2.0f);
+#endif
+
     f = SpikyCalculateGradient(dist, solverData_KernelFactors.y, solverData_KernelSize.x);
     f *= scalar;
 
@@ -133,7 +132,7 @@ for (uint neighborIndex = 0; neighborIndex < nbMax; ++neighborIndex)
             solverData_KernelSize.x)
         * invNeighborDensity;
 
-    f = (neighborVelocity - velocity) / solverData_KernelSize.w;
+    f = neighborVelocity - velocity;
     f *= scalar * solverData_Fluid_Viscosity;
 
     force += f;
@@ -145,7 +144,7 @@ for (uint neighborIndex = 0; neighborIndex < nbMax; ++neighborIndex)
         scalar = neighborMass
             * Poly6CalculateLaplacian(dist, solverData_KernelFactors.x, solverData_KernelSize.y)
             * solverData_Fluid_SurfaceTension
-            * invNeighborDensity;
+            * 1.0f / neighborDensityPressure.y;
 
         f = normal.xyz * scalar;
 
@@ -187,7 +186,11 @@ force += solverData_Gravity;
 
 #ifdef FLUVIO_BUOYANCY_FORCE_ENABLED
 // Buoyancy term (external)
+#ifdef FLUVIO_COLLISION_ENABLED
 force += solverData_Gravity * solverData_Fluid_BuoyancyCoefficient * (densityPressure.x - solverData_Fluid_Density);
+#else
+force += solverData_Gravity * solverData_Fluid_BuoyancyCoefficient * (densityPressure.y - solverData_Fluid_Density);
+#endif
 #endif";
     }
 }

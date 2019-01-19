@@ -31,6 +31,9 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
             }
         }
 
+        protected override bool solverDataProperty => true;
+        protected override bool findSolverData => false;
+
         public override string source => @"
 // Clear forces
 force = 0;

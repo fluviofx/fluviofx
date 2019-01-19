@@ -11,32 +11,33 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
 {
     [VFXInfo(category = "FluvioFX/Solver")]
     class DensityPressure : FluvioFXBlock
+    {
+        public override string name
         {
-            public override string name
+            get
             {
-                get
-                {
-                    return "Calculate Density and Pressure";
-                }
+                return "Calculate Density and Pressure";
             }
+        }
 
-            public override IEnumerable<VFXAttributeInfo> attributes
+        public override IEnumerable<VFXAttributeInfo> attributes
+        {
+            get
             {
-                get
+                yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
+                if (hasLifetime)
                 {
-                    yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
-                    if (hasLifetime)
-                    {
-                        yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
-                    }
-                    yield return new VFXAttributeInfo(VFXAttribute.Mass, VFXAttributeMode.Read);
-                    // yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.Read);
-                    yield return new VFXAttributeInfo(FluvioFXAttribute.DensityPressure, VFXAttributeMode.Write);
+                    yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
                 }
+                yield return new VFXAttributeInfo(VFXAttribute.Mass, VFXAttributeMode.Read);
+                // yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.Read);
+                yield return new VFXAttributeInfo(FluvioFXAttribute.DensityPressure, VFXAttributeMode.Write);
             }
-            public override string source => $@"
+        }
+        public override string source => $@"
 float3 dist;
 float density = 0;
+float pressure;
 #ifdef FLUVIO_INDEX_GRID
 uint neighborIndex;
 for (uint j = 0; j < neighborCount; ++j)
@@ -63,8 +64,9 @@ for (uint neighborIndex = 0; neighborIndex < nbMax; ++neighborIndex)
     density += neighborMass * Poly6Calculate(dist, solverData_KernelFactors.x, solverData_KernelSize.y);
 }}
 
-// Write to density/pressure texture
+// Write to density/pressure
 density = max(density, solverData_Fluid_MinimumDensity);
-densityPressure = float4(density, density, solverData_Fluid_GasConstant * (density - solverData_Fluid_Density), 0);";
+pressure = solverData_Fluid_GasConstant * (density - solverData_Fluid_Density);
+densityPressure = float4(density, density, pressure, pressure);";
     }
 }
