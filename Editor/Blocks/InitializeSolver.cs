@@ -31,9 +31,18 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
             }
         }
 
+        protected override bool solverDataProperty => true;
+        protected override bool findSolverData => false;
+
         public override string source => @"
+// Set old position
+oldPosition = position;
+
 // Clear forces
 force = 0;
+
+// Set mass
+mass = solverData_Fluid_ParticleMass;
 
 #ifdef FLUVIO_INDEX_GRID
 // Clear grid index
@@ -41,13 +50,6 @@ gridIndex = 0;
 
 // Clear neighbor count
 neighborCount = 0;
-
-// Set mass
-mass = solverData_Fluid_ParticleMass;
-
-// Set old position
-oldPosition = position;
-
 #endif";
     }
 }

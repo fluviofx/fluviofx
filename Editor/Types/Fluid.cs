@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEditor.VFX;
 using UnityEngine;
 using UnityEngine.Experimental.VFX;
@@ -56,5 +58,21 @@ namespace Thinksquirrel.FluvioFX.Editor
             SurfaceTension = 0.728f,
             BuoyancyCoefficient = 0.0f,
         };
+
+        internal IEnumerable<VFXNamedExpression> defaultExpressions
+        {
+            get
+            {
+                yield return new VFXNamedExpression(VFXValue.Constant(SmoothingDistance), nameof(SmoothingDistance));
+                yield return new VFXNamedExpression(VFXValue.Constant(ParticleMass), nameof(ParticleMass));
+                yield return new VFXNamedExpression(VFXValue.Constant(Density), nameof(Density));
+                yield return new VFXNamedExpression(VFXValue.Constant(MinimumDensity), nameof(MinimumDensity));
+                yield return new VFXNamedExpression(VFXValue.Constant(GasConstant), nameof(GasConstant));
+                yield return new VFXNamedExpression(VFXValue.Constant(Viscosity), nameof(Viscosity));
+                yield return new VFXNamedExpression(VFXValue.Constant(TurbulenceProbability), nameof(TurbulenceProbability));
+                yield return new VFXNamedExpression(VFXValue.Constant(SurfaceTension), nameof(SurfaceTension));
+                yield return new VFXNamedExpression(VFXValue.Constant(BuoyancyCoefficient), nameof(BuoyancyCoefficient));
+            }
+        }
     }
 }

@@ -48,13 +48,79 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
                 {
                     yield return p;
                 }
+
+                if (findSolverData)
+                {
+                    foreach (var exp in GetSolverDataExpressions(this))
+                    {
+                        yield return exp;
+                    }
+                }
+            }
+        }
+
+        protected virtual bool solverDataProperty => false;
+        protected virtual bool findSolverData => true;
+
+        protected override IEnumerable<VFXPropertyWithValue> inputProperties
+        {
+            get
+            {
+                if (solverDataProperty)
+                {
+                    return PropertiesFromType(typeof(SolverDataProperties));
+                }
+
+                return Enumerable.Empty<VFXPropertyWithValue>();
             }
         }
 
         protected bool hasLifetime => GetData().IsCurrentAttributeWritten(VFXAttribute.Alive);
 
+        internal static IEnumerable<VFXNamedExpression> GetSolverDataExpressions(VFXBlock block)
+        {
+            var context = block.GetParent();
+            var data = context.GetData();
+            var initializeBlock = data.owners
+                .SelectMany((c) => c.activeChildrenWithImplicit, (_, b) => b)
+                .FirstOrDefault((b) => b.GetType() == typeof(InitializeSolver));
+
+            if (initializeBlock)
+            {
+                return initializeBlock.parameters.Where((expression) => !expression.name.Contains("_Tex"));
+            }
+            else
+            {
+                var solverData = SolverData.defaultValue;
+                return solverData.defaultExpressions.Select((expression) =>
+                {
+                    expression.name = $"solverData_{expression.name}";
+                    return expression;
+                });
+            }
+        }
+
+        internal new static IEnumerable<VFXPropertyWithValue> PropertiesFromType(Type type)
+        {
+            if (type == null)
+            {
+                return Enumerable.Empty<VFXPropertyWithValue>();
+            }
+
+            var instance = System.Activator.CreateInstance(type);
+            return type.GetFields()
+                .Where(f => !f.IsStatic)
+                .Select(f =>
+                {
+                    var p = new VFXPropertyWithValue();
+                    p.property = new VFXProperty(f);
+                    p.value = f.GetValue(instance);
+                    return p;
+                });
+        }
+
 #pragma warning disable 649
-        public class InputProperties
+        public class SolverDataProperties
         {
             public SolverData solverData;
         }

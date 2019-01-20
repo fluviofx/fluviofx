@@ -11,31 +11,31 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
 {
     [VFXInfo(category = "FluvioFX/Solver")]
     class SurfaceNormal : FluvioFXBlock
+    {
+        public override string name
         {
-            public override string name
+            get
             {
-                get
-                {
-                    return "Calculate Surface Normal";
-                }
+                return "Calculate Surface Normal";
             }
+        }
 
-            public override IEnumerable<VFXAttributeInfo> attributes
+        public override IEnumerable<VFXAttributeInfo> attributes
+        {
+            get
             {
-                get
+                yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
+                if (hasLifetime)
                 {
-                    yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
-                    if (hasLifetime)
-                    {
-                        yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
-                    }
-                    yield return new VFXAttributeInfo(VFXAttribute.Mass, VFXAttributeMode.Read);
-
-                    // yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.Read);
-                    yield return new VFXAttributeInfo(FluvioFXAttribute.DensityPressure, VFXAttributeMode.Read);
-                    yield return new VFXAttributeInfo(FluvioFXAttribute.Normal, VFXAttributeMode.Write);
+                    yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
                 }
+                yield return new VFXAttributeInfo(VFXAttribute.Mass, VFXAttributeMode.Read);
+
+                // yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.Read);
+                yield return new VFXAttributeInfo(FluvioFXAttribute.DensityPressure, VFXAttributeMode.Read);
+                yield return new VFXAttributeInfo(FluvioFXAttribute.Normal, VFXAttributeMode.Write);
             }
+        }
 
             public override string source => $@"
 float3 dist;
@@ -64,10 +64,10 @@ for (uint neighborIndex = 0; neighborIndex < nbMax; ++neighborIndex)
     if (distLenSq >= solverData_KernelSize.y) continue;
 #endif
 
-    n += (neighborMass / neighborDensityPressure.y) * Poly6CalculateGradient(dist, solverData_KernelFactors.x, solverData_KernelSize.y);
+    n += (neighborMass / neighborDensityPressure.x) * Poly6CalculateGradient(dist, solverData_KernelFactors.x, solverData_KernelSize.y);
 }}
 
-// Write to normal texture
+// Write to normal
 float normalLen = length(n);
 normal = float4(n / normalLen, normalLen);";
     }

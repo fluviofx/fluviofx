@@ -1,6 +1,7 @@
 #ifndef FLUVIO_COMPUTE_INCLUDED
 #define FLUVIO_COMPUTE_INCLUDED
 #define FLUVIO_PI 3.14159265359f
+#define FLUVIO_TAU 3.14159265359f * 2.0f
 
 // Simulation constants - these cannot be changed at this time
 #define FLUVIO_EPSILON 9.99999944e-11f // FluvioFXSettings.kEpsilon
