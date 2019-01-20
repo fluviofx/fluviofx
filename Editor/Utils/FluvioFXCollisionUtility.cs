@@ -168,10 +168,7 @@ namespace Thinksquirrel.FluvioFX.Editor
     float searchRadius = solverData_KernelSize.x;
     float step = solverData_KernelSize.x * 0.5f;
 
-    {(settings.RoughSurface ? @"float3 gridJitter = float3(FIXED_RAND3(0x5f7b48e2))
-        * (1.0f / 4294967296.0f)
-        * step
-        * Roughness" : "")};
+    float3 gridJitter = float3(FIXED_RAND3(0x5f7b48e2)) * step;
 
     float x, y, z;
 
