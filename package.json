@@ -1,6 +1,6 @@
 {
   "name": "com.thinksquirrel.fluviofx",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "FluvioFX provides full fluid simulation for Unity's Visual Effect Graph.",
   "keywords": [
     "cfd",
