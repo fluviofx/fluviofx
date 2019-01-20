@@ -9,7 +9,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
     class CollisionCylinder : UnityEditor.VFX.Block.CollisionCylinder
     {
         [VFXSetting]
-        public bool EnableDensity = true;
+        public bool EnableFluidForces = true;
 
         public override string name
         {
@@ -24,14 +24,16 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
         public override IEnumerable<VFXNamedExpression> parameters =>
             FluvioFXCollisionUtility.GetParameters(this, base.parameters);
         protected override IEnumerable<VFXPropertyWithValue> inputProperties =>
-            FluvioFXCollisionUtility.GetInputProperties(base.inputProperties, EnableDensity);
+            FluvioFXCollisionUtility.GetInputProperties(base.inputProperties, EnableFluidForces);
         public override IEnumerable<VFXAttributeInfo> attributes =>
             FluvioFXCollisionUtility.GetAttributes(base.attributes);
 
         public override string source =>
             FluvioFXCollisionUtility.GetCollisionSource(
+                this,
+                EnableFluidForces,
                 base.source,
                 collisionResponseSource,
-                EnableDensity);
+                roughSurfaceSource);
     }
 }

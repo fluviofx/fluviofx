@@ -74,7 +74,7 @@ for (uint candidate = 0; candidate < nbMax; ++candidate)
                         VFXAttribute.Position,
                         "candidatePosition",
                         "candidate")}
-                    dist = candidatePosition - position;
+                    dist = position - candidatePosition;
                     d = dot(dist, dist);
 
                     if (d < solverData_KernelSize.y)

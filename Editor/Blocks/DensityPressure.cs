@@ -67,6 +67,6 @@ for (uint neighborIndex = 0; neighborIndex < nbMax; ++neighborIndex)
 // Write to density/pressure
 density = max(density, solverData_Fluid_MinimumDensity);
 pressure = solverData_Fluid_GasConstant * (density - solverData_Fluid_Density);
-densityPressure = float4(density, density, pressure, pressure);";
+densityPressure.xy = float2(density, pressure);";
     }
 }

@@ -11,8 +11,6 @@ namespace Thinksquirrel.FluvioFX.Editor.Integrators
 {
     internal class Verlet : Integrator
     {
-        protected override bool preIntegrate => true;
-
         protected override IEnumerable<VFXAttributeInfo> attributes
         {
             get
@@ -23,8 +21,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Integrators
 
         protected override string source => $@"
 float3 x = position;
-position = (x * 2) - oldPosition + (v * dt);
-velocity += v;
-";
+position = (x * 2) - oldPosition + ((v + velocity) * dt);
+velocity += v;";
     }
 }

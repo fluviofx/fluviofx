@@ -29,7 +29,6 @@ namespace Thinksquirrel.FluvioFX.Editor.Integrators
             }
         }
 
-        protected virtual bool preIntegrate => false;
         protected virtual IEnumerable<Type> inputPropertyTypes => null;
         protected virtual IEnumerable<VFXNamedExpression> parameters => null;
         protected virtual IEnumerable<VFXAttributeInfo> attributes => null;
@@ -96,8 +95,6 @@ namespace Thinksquirrel.FluvioFX.Editor.Integrators
         public string GetSource()
         {
             return $@"
-{(preIntegrate ? "position += velocity * dt;" : "")}
-
 float invMass = 1.0f / mass;
 float3 acceleration = force * invMass;
 float3 v = dt * acceleration;
