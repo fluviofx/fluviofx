@@ -137,7 +137,7 @@ for (uint neighborIndex = 0; neighborIndex < nbMax; ++neighborIndex)
 
 #ifdef FLUVIO_SURFACE_TENSION_ENABLED
     // Surface tension term (external)
-    if (normal.w > FLUVIO_PI && normal.w < FLUVIO_PI * 2.0f)
+    if (normal.w > FLUVIO_PI && normal.w < FLUVIO_TAU)
     {{
         scalar = neighborMass
             * Poly6CalculateLaplacian(dist, solverData_KernelFactors.x, solverData_KernelSize.y)

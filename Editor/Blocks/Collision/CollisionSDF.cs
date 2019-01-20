@@ -6,11 +6,8 @@ using UnityEngine;
 namespace Thinksquirrel.FluvioFX.Editor.Blocks
 {
     [VFXInfo(category = "FluvioFX/Collision")]
-    class CollisionSDF : UnityEditor.VFX.Block.CollisionSDF
+    class CollisionSDF : UnityEditor.VFX.Block.CollisionSDF, ICollisionSettings
     {
-        [VFXSetting]
-        public bool EnableFluidForces = true;
-
         public override string name
         {
             get
@@ -19,19 +16,33 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
             }
         }
 
+        [VFXSetting]
+        public bool boundaryPressure = true;
+        [VFXSetting]
+        public bool boundaryViscosity = true;
+        [VFXSetting]
+        public bool repulsionForce = false;
+
+        public bool BoundaryPressure => boundaryPressure;
+
+        public bool BoundaryViscosity => boundaryViscosity;
+
+        public bool RepulsionForce => repulsionForce;
+
+        public bool RoughSurface => roughSurface;
+
         public override IEnumerable<string> includes =>
             FluvioFXCollisionUtility.GetIncludes(base.includes);
         public override IEnumerable<VFXNamedExpression> parameters =>
             FluvioFXCollisionUtility.GetParameters(this, base.parameters);
         protected override IEnumerable<VFXPropertyWithValue> inputProperties =>
-            FluvioFXCollisionUtility.GetInputProperties(base.inputProperties, EnableFluidForces);
+            FluvioFXCollisionUtility.GetInputProperties(this, base.inputProperties);
         public override IEnumerable<VFXAttributeInfo> attributes =>
             FluvioFXCollisionUtility.GetAttributes(base.attributes);
 
         public override string source =>
             FluvioFXCollisionUtility.GetCollisionSource(
                 this,
-                EnableFluidForces,
                 base.source,
                 collisionResponseSource,
                 roughSurfaceSource);
