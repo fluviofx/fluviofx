@@ -29,12 +29,6 @@ namespace Thinksquirrel.FluvioFX.Editor
         public float GasConstant;
         [Min(FluvioFXSettings.kEpsilon), Tooltip("Controls the artificial viscosity force of the fluid.")]
         public float Viscosity;
-        [Range(0.0f, 1.0f), Tooltip(
-            "Controls the turbulence probability of the fluid. The turbulence probability is a threshold beyond " +
-            "which a particle may become turbulent. Turbulent particles will not affect non-turbulent particles. " +
-            "Fluid particles are not turbulent by default. Turbulent forces are typically applied through effectors, " +
-            "using the Vorticity property.")]
-        public float TurbulenceProbability;
         [Min(0.0f), Tooltip(
             "Controls the surface tension of the fluid (intended for liquids only). FluvioFX uses a " +
             "simplified surface tension model that is ideal for realtime use.")]
@@ -54,7 +48,6 @@ namespace Thinksquirrel.FluvioFX.Editor
             MinimumDensity = 9.9829f,
             GasConstant = 0.01f,
             Viscosity = 0.3f,
-            TurbulenceProbability = 0.2f,
             SurfaceTension = 0.728f,
             BuoyancyCoefficient = 0.0f,
         };
@@ -69,7 +62,6 @@ namespace Thinksquirrel.FluvioFX.Editor
                 yield return new VFXNamedExpression(VFXValue.Constant(MinimumDensity), nameof(MinimumDensity));
                 yield return new VFXNamedExpression(VFXValue.Constant(GasConstant), nameof(GasConstant));
                 yield return new VFXNamedExpression(VFXValue.Constant(Viscosity), nameof(Viscosity));
-                yield return new VFXNamedExpression(VFXValue.Constant(TurbulenceProbability), nameof(TurbulenceProbability));
                 yield return new VFXNamedExpression(VFXValue.Constant(SurfaceTension), nameof(SurfaceTension));
                 yield return new VFXNamedExpression(VFXValue.Constant(BuoyancyCoefficient), nameof(BuoyancyCoefficient));
             }

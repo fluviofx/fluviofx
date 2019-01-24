@@ -66,12 +66,6 @@ MonoBehaviour:
     - model: {fileID: 0}
       id: 7
       isStickyNote: 1
-    - model: {fileID: 8926484042661618173}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661618176}
-      id: 0
-      isStickyNote: 0
   - title: '[FluvioFX] Update and integrate'
     position:
       serializedVersion: 2
@@ -153,10 +147,9 @@ MonoBehaviour:
       width: 314
       height: 203
     contents: "Here, internal fluid forces (pressure and viscosity), along with external\r
-      fluid forces (surface tension, turbulence, and buoyancy) are calculated based\r
-      on the information above.\n\nSurface tension, turbulence, gravity, buoyancy
-      force, and collision density forces can all be disabled for performance gains
-      if not needed."
+      fluid forces (surface tension and buoyancy) are calculated based\r on the information
+      above.\n\nSurface tension, gravity, buoyancy force, and collision density forces
+      can all be disabled for performance gains if not needed."
     theme: Classic
     textSize: Small
   - title: Fluid properties
@@ -190,9 +183,9 @@ MonoBehaviour:
       x: 940
       y: 929
       width: 317
-      height: 136
-    contents: "Insert any standard VFX blocks here. The Integrate Particles block\r
-      must be the *last* block in this context."
+      height: 161
+    contents: "Insert fluid colliders and other VFX blocks here. The Integrate Particles
+      block\r must be the *last* block in this context."
     theme: Classic
     textSize: Medium
   systemInfos: []
@@ -250,13 +243,7 @@ VisualEffectResource:
       64\n#define VFX_USE_LIFETIME_CURRENT 1\n#define VFX_USE_POSITION_CURRENT 1\n#define
       VFX_USE_FORCE_CURRENT 1\n#define VFX_USE_MASS_CURRENT 1\n#define VFX_USE_OLDPOSITION_CURRENT
       1\n#define VFX_USE_ALIVE_CURRENT 1\n#define VFX_USE_AGE_CURRENT 1\n#define VFX_HAS_INDIRECT_DRAW
-      1\n#define VFX_WORLD_SPACE 1\n\n\nCBUFFER_START(parameters)\n    float4 solverData_KernelSize_a;\n
-      \   float4 solverData_KernelFactors_a;\n    float3 solverData_Gravity_a;\n    float
-      solverData_Fluid_SmoothingDistance_a;\n    float solverData_Fluid_ParticleMass_a;\n
-      \   float solverData_Fluid_Density_a;\n    float solverData_Fluid_MinimumDensity_a;\n
-      \   float solverData_Fluid_GasConstant_a;\n    float solverData_Fluid_Viscosity_a;\n
-      \   float solverData_Fluid_TurbulenceProbability_a;\n    float solverData_Fluid_SurfaceTension_a;\n
-      \   float solverData_Fluid_BuoyancyCoefficient_a;\nCBUFFER_END\nTexture2D solverData_Tex_a;\nSamplerState
+      1\n#define VFX_WORLD_SPACE 1\n\n\nTexture2D solverData_Tex_a;\nSamplerState
       samplersolverData_Tex_a;\n\n\n#include \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.thinksquirrel.fluviofx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
       attributeBuffer;\n\n#if VFX_USE_ALIVE_CURRENT\nRWStructuredBuffer<uint> deadListOut;\n#endif\n\n#if
@@ -266,59 +253,55 @@ VisualEffectResource:
       mass, inout float3 oldPosition, float solverData_Fluid_SmoothingDistance, float
       solverData_Fluid_ParticleMass, float solverData_Fluid_Density, float solverData_Fluid_MinimumDensity,
       float solverData_Fluid_GasConstant, float solverData_Fluid_Viscosity, float
-      solverData_Fluid_TurbulenceProbability, float solverData_Fluid_SurfaceTension,
-      float solverData_Fluid_BuoyancyCoefficient, float3 solverData_Gravity, float4
-      solverData_KernelSize, float4 solverData_KernelFactors, VFXSampler2D solverData_Tex,
-      float2 solverData_TexSize)\n{\n    \n    // Set old position\n    oldPosition
-      = position;\n    \n    // Clear forces\n    force = 0;\n    \n    // Set mass\n
-      \   mass = solverData_Fluid_ParticleMass;\n    \n    #ifdef FLUVIO_INDEX_GRID\n
-      \   // Clear grid index\n    gridIndex = 0;\n    \n    // Clear neighbor count\n
-      \   neighborCount = 0;\n    #endif\n}\nvoid Reap(float age, float lifetime,
-      inout bool alive)\n{\n    if(age > lifetime) { alive = false; }\n}\n\n\n\n[numthreads(NB_THREADS_PER_GROUP,1,1)]\nvoid
-      CSMain(uint3 groupId          : SV_GroupID,\n            uint3 groupThreadId
-      \   : SV_GroupThreadID)\n{\n\tuint id = groupThreadId.x + groupId.x * NB_THREADS_PER_GROUP
-      + groupId.y * dispatchWidth * NB_THREADS_PER_GROUP;\n\tuint index = id;\n\tif
-      (id < nbMax)\n\t{\n#if VFX_USE_ALIVE_CURRENT\n\t\tbool alive = (attributeBuffer.Load((index
-      * 0x1 + 0xF000) << 2));\n\t\t\n\n\t\tif (alive)\n\t\t{\n\t\t\tfloat lifetime
-      = asfloat(attributeBuffer.Load((index * 0x1 + 0x0) << 2));\n\t\t\tfloat3 position
-      = asfloat(attributeBuffer.Load3((index * 0x4 + 0x800) << 2));\n\t\t\tfloat3
-      force = asfloat(attributeBuffer.Load3((index * 0x4 + 0x4800) << 2));\n\t\t\tfloat
-      mass = asfloat(attributeBuffer.Load((index * 0x1 + 0x6800) << 2));\n\t\t\tfloat3
-      oldPosition = asfloat(attributeBuffer.Load3((index * 0x4 + 0x7000) << 2));\n\t\t\tfloat
-      age = asfloat(attributeBuffer.Load((index * 0x1 + 0xF800) << 2));\n\t\t\t\n\n\t\t\t\n#if
-      VFX_USE_OLDPOSITION_CURRENT\n\t\t\toldPosition = position;\n#endif\n\t\t\t\n\t\t\t{\n\t\t\t
-      \   InitializeSolver(index, position,  /*inout */force,  /*inout */mass,  /*inout
-      */oldPosition, solverData_Fluid_SmoothingDistance_a, solverData_Fluid_ParticleMass_a,
-      solverData_Fluid_Density_a, solverData_Fluid_MinimumDensity_a, solverData_Fluid_GasConstant_a,
-      solverData_Fluid_Viscosity_a, solverData_Fluid_TurbulenceProbability_a, solverData_Fluid_SurfaceTension_a,
-      solverData_Fluid_BuoyancyCoefficient_a, solverData_Gravity_a, solverData_KernelSize_a,
-      solverData_KernelFactors_a, GetVFXSampler(solverData_Tex_a, samplersolverData_Tex_a),
-      float2(0,0));\n\t\t\t}\n\t\t\tReap(age, lifetime,  /*inout */alive);\n\t\t\t\n\n\t\t\tif
-      (alive)\n\t\t\t{\n\t\t\t\tattributeBuffer.Store3((index * 0x4 + 0x4800) << 2,asuint(force));\n\t\t\t\tattributeBuffer.Store((index
-      * 0x1 + 0x6800) << 2,asuint(mass));\n\t\t\t\tattributeBuffer.Store3((index *
-      0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\t\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n
+      solverData_Fluid_SurfaceTension, float solverData_Fluid_BuoyancyCoefficient,
+      float3 solverData_Gravity, float4 solverData_KernelSize, float4 solverData_KernelFactors,
+      VFXSampler2D solverData_Tex, float2 solverData_TexSize)\n{\n    \n    // Set
+      old position\n    oldPosition = position;\n    \n    // Clear forces\n    force
+      = 0;\n    \n    // Set mass\n    mass = solverData_Fluid_ParticleMass;\n    \n
+      \   #ifdef FLUVIO_INDEX_GRID\n    // Clear grid index\n    gridIndex = 0;\n
+      \   \n    // Clear neighbor count\n    neighborCount = 0;\n    #endif\n}\nvoid
+      Reap(float age, float lifetime, inout bool alive)\n{\n    if(age > lifetime)
+      { alive = false; }\n}\n\n\n\n[numthreads(NB_THREADS_PER_GROUP,1,1)]\nvoid CSMain(uint3
+      groupId          : SV_GroupID,\n            uint3 groupThreadId    : SV_GroupThreadID)\n{\n\tuint
+      id = groupThreadId.x + groupId.x * NB_THREADS_PER_GROUP + groupId.y * dispatchWidth
+      * NB_THREADS_PER_GROUP;\n\tuint index = id;\n\tif (id < nbMax)\n\t{\n#if VFX_USE_ALIVE_CURRENT\n\t\tbool
+      alive = (attributeBuffer.Load((index * 0x1 + 0xD000) << 2));\n\t\t\n\n\t\tif
+      (alive)\n\t\t{\n\t\t\tfloat lifetime = asfloat(attributeBuffer.Load((index *
+      0x1 + 0x0) << 2));\n\t\t\tfloat3 position = asfloat(attributeBuffer.Load3((index
+      * 0x4 + 0x800) << 2));\n\t\t\tfloat3 force = asfloat(attributeBuffer.Load3((index
+      * 0x4 + 0x4800) << 2));\n\t\t\tfloat mass = asfloat(attributeBuffer.Load((index
+      * 0x1 + 0x6800) << 2));\n\t\t\tfloat3 oldPosition = asfloat(attributeBuffer.Load3((index
+      * 0x4 + 0x7000) << 2));\n\t\t\tfloat age = asfloat(attributeBuffer.Load((index
+      * 0x1 + 0xD800) << 2));\n\t\t\t\n\n\t\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\t\toldPosition
+      = position;\n#endif\n\t\t\t\n\t\t\t{\n\t\t\t    InitializeSolver(index, position,
+      \ /*inout */force,  /*inout */mass,  /*inout */oldPosition, (float)0.38125,
+      (float)7.625, (float)998.29, (float)9.9829, (float)0.01, (float)0.3, (float)0.728,
+      (float)0, float3(0,-9.81,0), float4(0.38125,0.1453516,0.05541528,0), float4(9206.448,1554.828,43.08061,0),
+      GetVFXSampler(solverData_Tex_a, samplersolverData_Tex_a), float2(0,0));\n\t\t\t}\n\t\t\tReap(age,
+      lifetime,  /*inout */alive);\n\t\t\t\n\n\t\t\tif (alive)\n\t\t\t{\n\t\t\t\tattributeBuffer.Store3((index
+      * 0x4 + 0x4800) << 2,asuint(force));\n\t\t\t\tattributeBuffer.Store((index *
+      0x1 + 0x6800) << 2,asuint(mass));\n\t\t\t\tattributeBuffer.Store3((index * 0x4
+      + 0x7000) << 2,asuint(oldPosition));\n\t\t\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n
       \               uint indirectIndex = indirectBuffer.IncrementCounter();\n\t\t\t\tindirectBuffer[indirectIndex]
       = index;\n#endif\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tattributeBuffer.Store((index
-      * 0x1 + 0xF000) << 2,uint(alive));\n\t\t\t\t\n\n\t\t\t\tuint deadIndex = deadListOut.IncrementCounter();\n\t\t\t\tdeadListOut[deadIndex]
+      * 0x1 + 0xD000) << 2,uint(alive));\n\t\t\t\t\n\n\t\t\t\tuint deadIndex = deadListOut.IncrementCounter();\n\t\t\t\tdeadListOut[deadIndex]
       = index;\n\t\t\t}\n\t\t}\n#else\n\t\tfloat lifetime = asfloat(attributeBuffer.Load((index
       * 0x1 + 0x0) << 2));\n\t\tfloat3 position = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x800) << 2));\n\t\tfloat3 force = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x4800) << 2));\n\t\tfloat mass = asfloat(attributeBuffer.Load((index
       * 0x1 + 0x6800) << 2));\n\t\tfloat3 oldPosition = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x7000) << 2));\n\t\tbool alive = (attributeBuffer.Load((index * 0x1
-      + 0xF000) << 2));\n\t\tfloat age = asfloat(attributeBuffer.Load((index * 0x1
-      + 0xF800) << 2));\n\t\t\n\n\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\toldPosition
+      + 0xD000) << 2));\n\t\tfloat age = asfloat(attributeBuffer.Load((index * 0x1
+      + 0xD800) << 2));\n\t\t\n\n\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\toldPosition
       = position;\n#endif\n\t\t\n\t\t{\n\t\t    InitializeSolver(index, position,
-      \ /*inout */force,  /*inout */mass,  /*inout */oldPosition, solverData_Fluid_SmoothingDistance_a,
-      solverData_Fluid_ParticleMass_a, solverData_Fluid_Density_a, solverData_Fluid_MinimumDensity_a,
-      solverData_Fluid_GasConstant_a, solverData_Fluid_Viscosity_a, solverData_Fluid_TurbulenceProbability_a,
-      solverData_Fluid_SurfaceTension_a, solverData_Fluid_BuoyancyCoefficient_a, solverData_Gravity_a,
-      solverData_KernelSize_a, solverData_KernelFactors_a, GetVFXSampler(solverData_Tex_a,
-      samplersolverData_Tex_a), float2(0,0));\n\t\t}\n\t\tReap(age, lifetime,  /*inout
-      */alive);\n\t\t\n\n\t\tattributeBuffer.Store3((index * 0x4 + 0x4800) << 2,asuint(force));\n\t\tattributeBuffer.Store((index
-      * 0x1 + 0x6800) << 2,asuint(mass));\n\t\tattributeBuffer.Store3((index * 0x4
-      + 0x7000) << 2,asuint(oldPosition));\n\t\tattributeBuffer.Store((index * 0x1
-      + 0xF000) << 2,uint(alive));\n\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n        uint
+      \ /*inout */force,  /*inout */mass,  /*inout */oldPosition, (float)0.38125,
+      (float)7.625, (float)998.29, (float)9.9829, (float)0.01, (float)0.3, (float)0.728,
+      (float)0, float3(0,-9.81,0), float4(0.38125,0.1453516,0.05541528,0), float4(9206.448,1554.828,43.08061,0),
+      GetVFXSampler(solverData_Tex_a, samplersolverData_Tex_a), float2(0,0));\n\t\t}\n\t\tReap(age,
+      lifetime,  /*inout */alive);\n\t\t\n\n\t\tattributeBuffer.Store3((index * 0x4
+      + 0x4800) << 2,asuint(force));\n\t\tattributeBuffer.Store((index * 0x1 + 0x6800)
+      << 2,asuint(mass));\n\t\tattributeBuffer.Store3((index * 0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\tattributeBuffer.Store((index
+      * 0x1 + 0xD000) << 2,uint(alive));\n\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n        uint
       indirectIndex = indirectBuffer.IncrementCounter();\n\t\tindirectBuffer[indirectIndex]
       = index;\n#endif\n#endif\n\t}\n}\n"
   - compute: 1
@@ -326,13 +309,7 @@ VisualEffectResource:
     source: "#pragma kernel CSMain\n#include \"HLSLSupport.cginc\"\n#define NB_THREADS_PER_GROUP
       64\n#define VFX_USE_LIFETIME_CURRENT 1\n#define VFX_USE_POSITION_CURRENT 1\n#define
       VFX_USE_OLDPOSITION_CURRENT 1\n#define VFX_USE_ALIVE_CURRENT 1\n#define VFX_USE_AGE_CURRENT
-      1\n#define VFX_HAS_INDIRECT_DRAW 1\n#define VFX_WORLD_SPACE 1\n\n\nCBUFFER_START(parameters)\n
-      \   float4 solverData_KernelSize_a;\n    float4 solverData_KernelFactors_a;\n
-      \   float3 solverData_Gravity_a;\n    float solverData_Fluid_SmoothingDistance_a;\n
-      \   float solverData_Fluid_ParticleMass_a;\n    float solverData_Fluid_Density_a;\n
-      \   float solverData_Fluid_MinimumDensity_a;\n    float solverData_Fluid_GasConstant_a;\n
-      \   float solverData_Fluid_Viscosity_a;\n    float solverData_Fluid_TurbulenceProbability_a;\n
-      \   float solverData_Fluid_SurfaceTension_a;\n    float solverData_Fluid_BuoyancyCoefficient_a;\nCBUFFER_END\n\n\n#include
+      1\n#define VFX_HAS_INDIRECT_DRAW 1\n#define VFX_WORLD_SPACE 1\n\n\n\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.thinksquirrel.fluviofx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
       attributeBuffer;\n\n#if VFX_USE_ALIVE_CURRENT\nRWStructuredBuffer<uint> deadListOut;\n#endif\n\n#if
@@ -341,59 +318,50 @@ VisualEffectResource:
       SpacePartitioning(uint index, float3 position, bool alive, float solverData_Fluid_SmoothingDistance,
       float solverData_Fluid_ParticleMass, float solverData_Fluid_Density, float solverData_Fluid_MinimumDensity,
       float solverData_Fluid_GasConstant, float solverData_Fluid_Viscosity, float
-      solverData_Fluid_TurbulenceProbability, float solverData_Fluid_SurfaceTension,
-      float solverData_Fluid_BuoyancyCoefficient, float3 solverData_Gravity, float4
-      solverData_KernelSize, float4 solverData_KernelFactors)\n{\n    \n    #ifdef
-      FLUVIO_INDEX_GRID\n    // indices are +1 for GPU grids (0 = not alive)\n    gridIndex
-      = GetGridIndexFromPosition(position, solverData_KernelSize.x) + 1;\n    #endif\n
-      \   \n}\nvoid Reap(float age, float lifetime, inout bool alive)\n{\n    if(age
-      > lifetime) { alive = false; }\n}\n\n\n\n[numthreads(NB_THREADS_PER_GROUP,1,1)]\nvoid
+      solverData_Fluid_SurfaceTension, float solverData_Fluid_BuoyancyCoefficient,
+      float3 solverData_Gravity, float4 solverData_KernelSize, float4 solverData_KernelFactors)\n{\n
+      \   \n    #ifdef FLUVIO_INDEX_GRID\n    // indices are +1 for GPU grids (0 =
+      not alive)\n    gridIndex = GetGridIndexFromPosition(position, solverData_KernelSize.x)
+      + 1;\n    #endif\n    \n}\nvoid Reap(float age, float lifetime, inout bool alive)\n{\n
+      \   if(age > lifetime) { alive = false; }\n}\n\n\n\n[numthreads(NB_THREADS_PER_GROUP,1,1)]\nvoid
       CSMain(uint3 groupId          : SV_GroupID,\n            uint3 groupThreadId
       \   : SV_GroupThreadID)\n{\n\tuint id = groupThreadId.x + groupId.x * NB_THREADS_PER_GROUP
       + groupId.y * dispatchWidth * NB_THREADS_PER_GROUP;\n\tuint index = id;\n\tif
       (id < nbMax)\n\t{\n#if VFX_USE_ALIVE_CURRENT\n\t\tbool alive = (attributeBuffer.Load((index
-      * 0x1 + 0xF000) << 2));\n\t\t\n\n\t\tif (alive)\n\t\t{\n\t\t\tfloat lifetime
+      * 0x1 + 0xD000) << 2));\n\t\t\n\n\t\tif (alive)\n\t\t{\n\t\t\tfloat lifetime
       = asfloat(attributeBuffer.Load((index * 0x1 + 0x0) << 2));\n\t\t\tfloat3 position
       = asfloat(attributeBuffer.Load3((index * 0x4 + 0x800) << 2));\n\t\t\tfloat3
       oldPosition = asfloat(attributeBuffer.Load3((index * 0x4 + 0x7000) << 2));\n\t\t\tfloat
-      age = asfloat(attributeBuffer.Load((index * 0x1 + 0xF800) << 2));\n\t\t\t\n\n\t\t\t\n#if
-      VFX_USE_OLDPOSITION_CURRENT\n\t\t\toldPosition = position;\n#endif\n\t\t\t\n\t\t\tSpacePartitioning(index,
-      position, alive, solverData_Fluid_SmoothingDistance_a, solverData_Fluid_ParticleMass_a,
-      solverData_Fluid_Density_a, solverData_Fluid_MinimumDensity_a, solverData_Fluid_GasConstant_a,
-      solverData_Fluid_Viscosity_a, solverData_Fluid_TurbulenceProbability_a, solverData_Fluid_SurfaceTension_a,
-      solverData_Fluid_BuoyancyCoefficient_a, solverData_Gravity_a, solverData_KernelSize_a,
-      solverData_KernelFactors_a);\n\t\t\tReap(age, lifetime,  /*inout */alive);\n\t\t\t\n\n\t\t\tif
-      (alive)\n\t\t\t{\n\t\t\t\tattributeBuffer.Store3((index * 0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\t\t\t\n\n#if
-      VFX_HAS_INDIRECT_DRAW\n                uint indirectIndex = indirectBuffer.IncrementCounter();\n\t\t\t\tindirectBuffer[indirectIndex]
+      age = asfloat(attributeBuffer.Load((index * 0x1 + 0xD800) << 2));\n\t\t\t\n\n\t\t\t\n#if
+      VFX_USE_OLDPOSITION_CURRENT\n\t\t\toldPosition = position;\n#endif\n\t\t\t\n\t\t\t{\n\t\t\t
+      \   SpacePartitioning(index, position, alive, (float)0.38125, (float)7.625,
+      (float)998.29, (float)9.9829, (float)0.01, (float)0.3, (float)0.728, (float)0,
+      float3(0,-9.81,0), float4(0.38125,0.1453516,0.05541528,0), float4(9206.448,1554.828,43.08061,0));\n\t\t\t}\n\t\t\tReap(age,
+      lifetime,  /*inout */alive);\n\t\t\t\n\n\t\t\tif (alive)\n\t\t\t{\n\t\t\t\tattributeBuffer.Store3((index
+      * 0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\t\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n
+      \               uint indirectIndex = indirectBuffer.IncrementCounter();\n\t\t\t\tindirectBuffer[indirectIndex]
       = index;\n#endif\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tattributeBuffer.Store((index
-      * 0x1 + 0xF000) << 2,uint(alive));\n\t\t\t\t\n\n\t\t\t\tuint deadIndex = deadListOut.IncrementCounter();\n\t\t\t\tdeadListOut[deadIndex]
+      * 0x1 + 0xD000) << 2,uint(alive));\n\t\t\t\t\n\n\t\t\t\tuint deadIndex = deadListOut.IncrementCounter();\n\t\t\t\tdeadListOut[deadIndex]
       = index;\n\t\t\t}\n\t\t}\n#else\n\t\tfloat lifetime = asfloat(attributeBuffer.Load((index
       * 0x1 + 0x0) << 2));\n\t\tfloat3 position = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x800) << 2));\n\t\tfloat3 oldPosition = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x7000) << 2));\n\t\tbool alive = (attributeBuffer.Load((index * 0x1
-      + 0xF000) << 2));\n\t\tfloat age = asfloat(attributeBuffer.Load((index * 0x1
-      + 0xF800) << 2));\n\t\t\n\n\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\toldPosition
-      = position;\n#endif\n\t\t\n\t\tSpacePartitioning(index, position, alive, solverData_Fluid_SmoothingDistance_a,
-      solverData_Fluid_ParticleMass_a, solverData_Fluid_Density_a, solverData_Fluid_MinimumDensity_a,
-      solverData_Fluid_GasConstant_a, solverData_Fluid_Viscosity_a, solverData_Fluid_TurbulenceProbability_a,
-      solverData_Fluid_SurfaceTension_a, solverData_Fluid_BuoyancyCoefficient_a, solverData_Gravity_a,
-      solverData_KernelSize_a, solverData_KernelFactors_a);\n\t\tReap(age, lifetime,
-      \ /*inout */alive);\n\t\t\n\n\t\tattributeBuffer.Store3((index * 0x4 + 0x7000)
-      << 2,asuint(oldPosition));\n\t\tattributeBuffer.Store((index * 0x1 + 0xF000)
-      << 2,uint(alive));\n\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n        uint indirectIndex
-      = indirectBuffer.IncrementCounter();\n\t\tindirectBuffer[indirectIndex] = index;\n#endif\n#endif\n\t}\n}\n"
+      + 0xD000) << 2));\n\t\tfloat age = asfloat(attributeBuffer.Load((index * 0x1
+      + 0xD800) << 2));\n\t\t\n\n\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\toldPosition
+      = position;\n#endif\n\t\t\n\t\t{\n\t\t    SpacePartitioning(index, position,
+      alive, (float)0.38125, (float)7.625, (float)998.29, (float)9.9829, (float)0.01,
+      (float)0.3, (float)0.728, (float)0, float3(0,-9.81,0), float4(0.38125,0.1453516,0.05541528,0),
+      float4(9206.448,1554.828,43.08061,0));\n\t\t}\n\t\tReap(age, lifetime,  /*inout
+      */alive);\n\t\t\n\n\t\tattributeBuffer.Store3((index * 0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\tattributeBuffer.Store((index
+      * 0x1 + 0xD000) << 2,uint(alive));\n\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n        uint
+      indirectIndex = indirectBuffer.IncrementCounter();\n\t\tindirectBuffer[indirectIndex]
+      = index;\n#endif\n#endif\n\t}\n}\n"
   - compute: 1
     name: '[System 1]C Update'
     source: "#pragma kernel CSMain\n#include \"HLSLSupport.cginc\"\n#define NB_THREADS_PER_GROUP
       64\n#define VFX_USE_LIFETIME_CURRENT 1\n#define VFX_USE_POSITION_CURRENT 1\n#define
       VFX_USE_OLDPOSITION_CURRENT 1\n#define VFX_USE_ALIVE_CURRENT 1\n#define VFX_USE_AGE_CURRENT
-      1\n#define VFX_HAS_INDIRECT_DRAW 1\n#define VFX_WORLD_SPACE 1\n\n\nCBUFFER_START(parameters)\n
-      \   float4 solverData_KernelSize_a;\n    float4 solverData_KernelFactors_a;\n
-      \   float3 solverData_Gravity_a;\n    float solverData_Fluid_SmoothingDistance_a;\n
-      \   float solverData_Fluid_ParticleMass_a;\n    float solverData_Fluid_Density_a;\n
-      \   float solverData_Fluid_MinimumDensity_a;\n    float solverData_Fluid_GasConstant_a;\n
-      \   float solverData_Fluid_Viscosity_a;\n    float solverData_Fluid_TurbulenceProbability_a;\n
-      \   float solverData_Fluid_SurfaceTension_a;\n    float solverData_Fluid_BuoyancyCoefficient_a;\nCBUFFER_END\n\n\n#include
+      1\n#define VFX_HAS_INDIRECT_DRAW 1\n#define VFX_WORLD_SPACE 1\n\n\n\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.thinksquirrel.fluviofx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
       attributeBuffer;\n\n#if VFX_USE_ALIVE_CURRENT\nRWStructuredBuffer<uint> deadListOut;\n#endif\n\n#if
@@ -402,14 +370,13 @@ VisualEffectResource:
       NeighborSearch(uint index, float3 position, bool alive, float solverData_Fluid_SmoothingDistance,
       float solverData_Fluid_ParticleMass, float solverData_Fluid_Density, float solverData_Fluid_MinimumDensity,
       float solverData_Fluid_GasConstant, float solverData_Fluid_Viscosity, float
-      solverData_Fluid_TurbulenceProbability, float solverData_Fluid_SurfaceTension,
-      float solverData_Fluid_BuoyancyCoefficient, float3 solverData_Gravity, float4
-      solverData_KernelSize, float4 solverData_KernelFactors)\n{\n    \n    #ifdef
-      FLUVIO_INDEX_GRID\n    // TODO: Grid structure/neighbor search is not optimized,
-      due to VFX limitations.\n    // At the moment, we are unable to easily pass
-      custom buffers to the system,\n    // and not all platforms support texture
-      atomics, which would be required\n    // for a true spatial partition\n    \n
-      \   uint3 indexVector = GetGridIndexVector(position, solverData_KernelSize.x);\n
+      solverData_Fluid_SurfaceTension, float solverData_Fluid_BuoyancyCoefficient,
+      float3 solverData_Gravity, float4 solverData_KernelSize, float4 solverData_KernelFactors)\n{\n
+      \   \n    #ifdef FLUVIO_INDEX_GRID\n    // TODO: Grid structure/neighbor search
+      is not optimized, due to VFX limitations.\n    // At the moment, we are unable
+      to easily pass custom buffers to the system,\n    // and not all platforms support
+      texture atomics, which would be required\n    // for a true spatial partition\n
+      \   \n    uint3 indexVector = GetGridIndexVector(position, solverData_KernelSize.x);\n
       \   int3 indexVectorOff;\n    uint3 indexVectorOffset;\n    uint currentGridIndex;\n
       \   uint nCount = 0;\n    float3 candidatePosition, dist;\n    float d;\n    \n
       \   for (uint candidate = 0; candidate < nbMax; ++candidate)\n    {\n        if
@@ -436,51 +403,42 @@ VisualEffectResource:
       groupId          : SV_GroupID,\n            uint3 groupThreadId    : SV_GroupThreadID)\n{\n\tuint
       id = groupThreadId.x + groupId.x * NB_THREADS_PER_GROUP + groupId.y * dispatchWidth
       * NB_THREADS_PER_GROUP;\n\tuint index = id;\n\tif (id < nbMax)\n\t{\n#if VFX_USE_ALIVE_CURRENT\n\t\tbool
-      alive = (attributeBuffer.Load((index * 0x1 + 0xF000) << 2));\n\t\t\n\n\t\tif
+      alive = (attributeBuffer.Load((index * 0x1 + 0xD000) << 2));\n\t\t\n\n\t\tif
       (alive)\n\t\t{\n\t\t\tfloat lifetime = asfloat(attributeBuffer.Load((index *
       0x1 + 0x0) << 2));\n\t\t\tfloat3 position = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x800) << 2));\n\t\t\tfloat3 oldPosition = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x7000) << 2));\n\t\t\tfloat age = asfloat(attributeBuffer.Load((index
-      * 0x1 + 0xF800) << 2));\n\t\t\t\n\n\t\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\t\toldPosition
-      = position;\n#endif\n\t\t\t\n\t\t\tNeighborSearch(index, position, alive, solverData_Fluid_SmoothingDistance_a,
-      solverData_Fluid_ParticleMass_a, solverData_Fluid_Density_a, solverData_Fluid_MinimumDensity_a,
-      solverData_Fluid_GasConstant_a, solverData_Fluid_Viscosity_a, solverData_Fluid_TurbulenceProbability_a,
-      solverData_Fluid_SurfaceTension_a, solverData_Fluid_BuoyancyCoefficient_a, solverData_Gravity_a,
-      solverData_KernelSize_a, solverData_KernelFactors_a);\n\t\t\tReap(age, lifetime,
-      \ /*inout */alive);\n\t\t\t\n\n\t\t\tif (alive)\n\t\t\t{\n\t\t\t\tattributeBuffer.Store3((index
+      * 0x1 + 0xD800) << 2));\n\t\t\t\n\n\t\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\t\toldPosition
+      = position;\n#endif\n\t\t\t\n\t\t\t{\n\t\t\t    NeighborSearch(index, position,
+      alive, (float)0.38125, (float)7.625, (float)998.29, (float)9.9829, (float)0.01,
+      (float)0.3, (float)0.728, (float)0, float3(0,-9.81,0), float4(0.38125,0.1453516,0.05541528,0),
+      float4(9206.448,1554.828,43.08061,0));\n\t\t\t}\n\t\t\tReap(age, lifetime,  /*inout
+      */alive);\n\t\t\t\n\n\t\t\tif (alive)\n\t\t\t{\n\t\t\t\tattributeBuffer.Store3((index
       * 0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\t\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n
       \               uint indirectIndex = indirectBuffer.IncrementCounter();\n\t\t\t\tindirectBuffer[indirectIndex]
       = index;\n#endif\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tattributeBuffer.Store((index
-      * 0x1 + 0xF000) << 2,uint(alive));\n\t\t\t\t\n\n\t\t\t\tuint deadIndex = deadListOut.IncrementCounter();\n\t\t\t\tdeadListOut[deadIndex]
+      * 0x1 + 0xD000) << 2,uint(alive));\n\t\t\t\t\n\n\t\t\t\tuint deadIndex = deadListOut.IncrementCounter();\n\t\t\t\tdeadListOut[deadIndex]
       = index;\n\t\t\t}\n\t\t}\n#else\n\t\tfloat lifetime = asfloat(attributeBuffer.Load((index
       * 0x1 + 0x0) << 2));\n\t\tfloat3 position = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x800) << 2));\n\t\tfloat3 oldPosition = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x7000) << 2));\n\t\tbool alive = (attributeBuffer.Load((index * 0x1
-      + 0xF000) << 2));\n\t\tfloat age = asfloat(attributeBuffer.Load((index * 0x1
-      + 0xF800) << 2));\n\t\t\n\n\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\toldPosition
-      = position;\n#endif\n\t\t\n\t\tNeighborSearch(index, position, alive, solverData_Fluid_SmoothingDistance_a,
-      solverData_Fluid_ParticleMass_a, solverData_Fluid_Density_a, solverData_Fluid_MinimumDensity_a,
-      solverData_Fluid_GasConstant_a, solverData_Fluid_Viscosity_a, solverData_Fluid_TurbulenceProbability_a,
-      solverData_Fluid_SurfaceTension_a, solverData_Fluid_BuoyancyCoefficient_a, solverData_Gravity_a,
-      solverData_KernelSize_a, solverData_KernelFactors_a);\n\t\tReap(age, lifetime,
-      \ /*inout */alive);\n\t\t\n\n\t\tattributeBuffer.Store3((index * 0x4 + 0x7000)
-      << 2,asuint(oldPosition));\n\t\tattributeBuffer.Store((index * 0x1 + 0xF000)
-      << 2,uint(alive));\n\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n        uint indirectIndex
-      = indirectBuffer.IncrementCounter();\n\t\tindirectBuffer[indirectIndex] = index;\n#endif\n#endif\n\t}\n}\n"
+      + 0xD000) << 2));\n\t\tfloat age = asfloat(attributeBuffer.Load((index * 0x1
+      + 0xD800) << 2));\n\t\t\n\n\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\toldPosition
+      = position;\n#endif\n\t\t\n\t\t{\n\t\t    NeighborSearch(index, position, alive,
+      (float)0.38125, (float)7.625, (float)998.29, (float)9.9829, (float)0.01, (float)0.3,
+      (float)0.728, (float)0, float3(0,-9.81,0), float4(0.38125,0.1453516,0.05541528,0),
+      float4(9206.448,1554.828,43.08061,0));\n\t\t}\n\t\tReap(age, lifetime,  /*inout
+      */alive);\n\t\t\n\n\t\tattributeBuffer.Store3((index * 0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\tattributeBuffer.Store((index
+      * 0x1 + 0xD000) << 2,uint(alive));\n\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n        uint
+      indirectIndex = indirectBuffer.IncrementCounter();\n\t\tindirectBuffer[indirectIndex]
+      = index;\n#endif\n#endif\n\t}\n}\n"
   - compute: 1
     name: '[System 1]D Update'
     source: "#pragma kernel CSMain\n#include \"HLSLSupport.cginc\"\n#define NB_THREADS_PER_GROUP
       64\n#define VFX_USE_LIFETIME_CURRENT 1\n#define VFX_USE_POSITION_CURRENT 1\n#define
       VFX_USE_MASS_CURRENT 1\n#define VFX_USE_OLDPOSITION_CURRENT 1\n#define VFX_USE_DENSITYPRESSURE_CURRENT
       1\n#define VFX_USE_ALIVE_CURRENT 1\n#define VFX_USE_AGE_CURRENT 1\n#define VFX_HAS_INDIRECT_DRAW
-      1\n#define VFX_WORLD_SPACE 1\n\n\nCBUFFER_START(parameters)\n    float4 solverData_KernelSize_a;\n
-      \   float4 solverData_KernelFactors_a;\n    float3 solverData_Gravity_a;\n    float
-      solverData_Fluid_SmoothingDistance_a;\n    float solverData_Fluid_ParticleMass_a;\n
-      \   float solverData_Fluid_Density_a;\n    float solverData_Fluid_MinimumDensity_a;\n
-      \   float solverData_Fluid_GasConstant_a;\n    float solverData_Fluid_Viscosity_a;\n
-      \   float solverData_Fluid_TurbulenceProbability_a;\n    float solverData_Fluid_SurfaceTension_a;\n
-      \   float solverData_Fluid_BuoyancyCoefficient_a;\nCBUFFER_END\n\n\n#include
-      \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
+      1\n#define VFX_WORLD_SPACE 1\n\n\n\n#include \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.thinksquirrel.fluviofx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
       attributeBuffer;\n\n#if VFX_USE_ALIVE_CURRENT\nRWStructuredBuffer<uint> deadListOut;\n#endif\n\n#if
       VFX_HAS_INDIRECT_DRAW\nRWStructuredBuffer<uint> indirectBuffer;\n#endif\n\nCBUFFER_START(updateParams)\n
@@ -488,16 +446,16 @@ VisualEffectResource:
       DensityPressure(uint index, float3 position, bool alive, float mass, inout float4
       densityPressure, float solverData_Fluid_SmoothingDistance, float solverData_Fluid_ParticleMass,
       float solverData_Fluid_Density, float solverData_Fluid_MinimumDensity, float
-      solverData_Fluid_GasConstant, float solverData_Fluid_Viscosity, float solverData_Fluid_TurbulenceProbability,
-      float solverData_Fluid_SurfaceTension, float solverData_Fluid_BuoyancyCoefficient,
-      float3 solverData_Gravity, float4 solverData_KernelSize, float4 solverData_KernelFactors)\n{\n
-      \   \n    float3 dist;\n    float density = 0;\n    float pressure;\n    #ifdef
-      FLUVIO_INDEX_GRID\n    uint neighborIndex;\n    for (uint j = 0; j < neighborCount;
-      ++j)\n    {\n        neighborIndex = GetNeighborIndex(solverData_Tex, solverData_TexSize,
+      solverData_Fluid_GasConstant, float solverData_Fluid_Viscosity, float solverData_Fluid_SurfaceTension,
+      float solverData_Fluid_BuoyancyCoefficient, float3 solverData_Gravity, float4
+      solverData_KernelSize, float4 solverData_KernelFactors)\n{\n    \n    float3
+      dist;\n    float density = 0;\n    float pressure;\n    #ifdef FLUVIO_INDEX_GRID\n
+      \   uint neighborIndex;\n    for (uint j = 0; j < neighborCount; ++j)\n    {\n
+      \       neighborIndex = GetNeighborIndex(solverData_Tex, solverData_TexSize,
       index, j);\n    #else\n    float distLenSq;\n    for (uint neighborIndex = 0;
       neighborIndex < nbMax; ++neighborIndex)\n    {\n        if (index == neighborIndex)
       continue;\n        bool neighborAlive = (attributeBuffer.Load((neighborIndex
-      * 0x1 + 0xF000) << 2));\n        if (!neighborAlive) continue;\n    #endif\n
+      * 0x1 + 0xD000) << 2));\n        if (!neighborAlive) continue;\n    #endif\n
       \   \n        float3 neighborPosition = asfloat(attributeBuffer.Load3((neighborIndex
       * 0x4 + 0x800) << 2));\n        float neighborMass = asfloat(attributeBuffer.Load((neighborIndex
       * 0x1 + 0x6800) << 2));\n    \n        dist = position - neighborPosition;\n
@@ -512,42 +470,40 @@ VisualEffectResource:
       \         : SV_GroupID,\n            uint3 groupThreadId    : SV_GroupThreadID)\n{\n\tuint
       id = groupThreadId.x + groupId.x * NB_THREADS_PER_GROUP + groupId.y * dispatchWidth
       * NB_THREADS_PER_GROUP;\n\tuint index = id;\n\tif (id < nbMax)\n\t{\n#if VFX_USE_ALIVE_CURRENT\n\t\tbool
-      alive = (attributeBuffer.Load((index * 0x1 + 0xF000) << 2));\n\t\t\n\n\t\tif
+      alive = (attributeBuffer.Load((index * 0x1 + 0xD000) << 2));\n\t\t\n\n\t\tif
       (alive)\n\t\t{\n\t\t\tfloat lifetime = asfloat(attributeBuffer.Load((index *
       0x1 + 0x0) << 2));\n\t\t\tfloat3 position = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x800) << 2));\n\t\t\tfloat mass = asfloat(attributeBuffer.Load((index
       * 0x1 + 0x6800) << 2));\n\t\t\tfloat3 oldPosition = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x7000) << 2));\n\t\t\tfloat4 densityPressure = asfloat(attributeBuffer.Load4((index
       * 0x4 + 0x9000) << 2));\n\t\t\tfloat age = asfloat(attributeBuffer.Load((index
-      * 0x1 + 0xF800) << 2));\n\t\t\t\n\n\t\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\t\toldPosition
-      = position;\n#endif\n\t\t\t\n\t\t\tDensityPressure(index, position, alive, mass,
-      \ /*inout */densityPressure, solverData_Fluid_SmoothingDistance_a, solverData_Fluid_ParticleMass_a,
-      solverData_Fluid_Density_a, solverData_Fluid_MinimumDensity_a, solverData_Fluid_GasConstant_a,
-      solverData_Fluid_Viscosity_a, solverData_Fluid_TurbulenceProbability_a, solverData_Fluid_SurfaceTension_a,
-      solverData_Fluid_BuoyancyCoefficient_a, solverData_Gravity_a, solverData_KernelSize_a,
-      solverData_KernelFactors_a);\n\t\t\tReap(age, lifetime,  /*inout */alive);\n\t\t\t\n\n\t\t\tif
-      (alive)\n\t\t\t{\n\t\t\t\tattributeBuffer.Store3((index * 0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\t\t\tattributeBuffer.Store4((index
+      * 0x1 + 0xD800) << 2));\n\t\t\t\n\n\t\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\t\toldPosition
+      = position;\n#endif\n\t\t\t\n\t\t\t{\n\t\t\t    DensityPressure(index, position,
+      alive, mass,  /*inout */densityPressure, (float)0.38125, (float)7.625, (float)998.29,
+      (float)9.9829, (float)0.01, (float)0.3, (float)0.728, (float)0, float3(0,-9.81,0),
+      float4(0.38125,0.1453516,0.05541528,0), float4(9206.448,1554.828,43.08061,0));\n\t\t\t}\n\t\t\tReap(age,
+      lifetime,  /*inout */alive);\n\t\t\t\n\n\t\t\tif (alive)\n\t\t\t{\n\t\t\t\tattributeBuffer.Store3((index
+      * 0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\t\t\tattributeBuffer.Store4((index
       * 0x4 + 0x9000) << 2,asuint(densityPressure));\n\t\t\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n
       \               uint indirectIndex = indirectBuffer.IncrementCounter();\n\t\t\t\tindirectBuffer[indirectIndex]
       = index;\n#endif\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tattributeBuffer.Store((index
-      * 0x1 + 0xF000) << 2,uint(alive));\n\t\t\t\t\n\n\t\t\t\tuint deadIndex = deadListOut.IncrementCounter();\n\t\t\t\tdeadListOut[deadIndex]
+      * 0x1 + 0xD000) << 2,uint(alive));\n\t\t\t\t\n\n\t\t\t\tuint deadIndex = deadListOut.IncrementCounter();\n\t\t\t\tdeadListOut[deadIndex]
       = index;\n\t\t\t}\n\t\t}\n#else\n\t\tfloat lifetime = asfloat(attributeBuffer.Load((index
       * 0x1 + 0x0) << 2));\n\t\tfloat3 position = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x800) << 2));\n\t\tfloat mass = asfloat(attributeBuffer.Load((index
       * 0x1 + 0x6800) << 2));\n\t\tfloat3 oldPosition = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x7000) << 2));\n\t\tfloat4 densityPressure = asfloat(attributeBuffer.Load4((index
       * 0x4 + 0x9000) << 2));\n\t\tbool alive = (attributeBuffer.Load((index * 0x1
-      + 0xF000) << 2));\n\t\tfloat age = asfloat(attributeBuffer.Load((index * 0x1
-      + 0xF800) << 2));\n\t\t\n\n\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\toldPosition
-      = position;\n#endif\n\t\t\n\t\tDensityPressure(index, position, alive, mass,
-      \ /*inout */densityPressure, solverData_Fluid_SmoothingDistance_a, solverData_Fluid_ParticleMass_a,
-      solverData_Fluid_Density_a, solverData_Fluid_MinimumDensity_a, solverData_Fluid_GasConstant_a,
-      solverData_Fluid_Viscosity_a, solverData_Fluid_TurbulenceProbability_a, solverData_Fluid_SurfaceTension_a,
-      solverData_Fluid_BuoyancyCoefficient_a, solverData_Gravity_a, solverData_KernelSize_a,
-      solverData_KernelFactors_a);\n\t\tReap(age, lifetime,  /*inout */alive);\n\t\t\n\n\t\tattributeBuffer.Store3((index
-      * 0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\tattributeBuffer.Store4((index
-      * 0x4 + 0x9000) << 2,asuint(densityPressure));\n\t\tattributeBuffer.Store((index
-      * 0x1 + 0xF000) << 2,uint(alive));\n\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n        uint
+      + 0xD000) << 2));\n\t\tfloat age = asfloat(attributeBuffer.Load((index * 0x1
+      + 0xD800) << 2));\n\t\t\n\n\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\toldPosition
+      = position;\n#endif\n\t\t\n\t\t{\n\t\t    DensityPressure(index, position, alive,
+      mass,  /*inout */densityPressure, (float)0.38125, (float)7.625, (float)998.29,
+      (float)9.9829, (float)0.01, (float)0.3, (float)0.728, (float)0, float3(0,-9.81,0),
+      float4(0.38125,0.1453516,0.05541528,0), float4(9206.448,1554.828,43.08061,0));\n\t\t}\n\t\tReap(age,
+      lifetime,  /*inout */alive);\n\t\t\n\n\t\tattributeBuffer.Store3((index * 0x4
+      + 0x7000) << 2,asuint(oldPosition));\n\t\tattributeBuffer.Store4((index * 0x4
+      + 0x9000) << 2,asuint(densityPressure));\n\t\tattributeBuffer.Store((index *
+      0x1 + 0xD000) << 2,uint(alive));\n\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n        uint
       indirectIndex = indirectBuffer.IncrementCounter();\n\t\tindirectBuffer[indirectIndex]
       = index;\n#endif\n#endif\n\t}\n}\n"
   - compute: 1
@@ -557,13 +513,7 @@ VisualEffectResource:
       VFX_USE_MASS_CURRENT 1\n#define VFX_USE_OLDPOSITION_CURRENT 1\n#define VFX_USE_DENSITYPRESSURE_CURRENT
       1\n#define VFX_USE_NORMAL_CURRENT 1\n#define VFX_USE_ALIVE_CURRENT 1\n#define
       VFX_USE_AGE_CURRENT 1\n#define VFX_HAS_INDIRECT_DRAW 1\n#define VFX_WORLD_SPACE
-      1\n\n\nCBUFFER_START(parameters)\n    float4 solverData_KernelSize_a;\n    float4
-      solverData_KernelFactors_a;\n    float3 solverData_Gravity_a;\n    float solverData_Fluid_SmoothingDistance_a;\n
-      \   float solverData_Fluid_ParticleMass_a;\n    float solverData_Fluid_Density_a;\n
-      \   float solverData_Fluid_MinimumDensity_a;\n    float solverData_Fluid_GasConstant_a;\n
-      \   float solverData_Fluid_Viscosity_a;\n    float solverData_Fluid_TurbulenceProbability_a;\n
-      \   float solverData_Fluid_SurfaceTension_a;\n    float solverData_Fluid_BuoyancyCoefficient_a;\nCBUFFER_END\n\n\n#include
-      \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
+      1\n\n\n\n#include \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.thinksquirrel.fluviofx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
       attributeBuffer;\n\n#if VFX_USE_ALIVE_CURRENT\nRWStructuredBuffer<uint> deadListOut;\n#endif\n\n#if
       VFX_HAS_INDIRECT_DRAW\nRWStructuredBuffer<uint> indirectBuffer;\n#endif\n\nCBUFFER_START(updateParams)\n
@@ -571,15 +521,15 @@ VisualEffectResource:
       SurfaceNormal(uint index, float3 position, bool alive, float mass, float4 densityPressure,
       inout float4 normal, float solverData_Fluid_SmoothingDistance, float solverData_Fluid_ParticleMass,
       float solverData_Fluid_Density, float solverData_Fluid_MinimumDensity, float
-      solverData_Fluid_GasConstant, float solverData_Fluid_Viscosity, float solverData_Fluid_TurbulenceProbability,
-      float solverData_Fluid_SurfaceTension, float solverData_Fluid_BuoyancyCoefficient,
-      float3 solverData_Gravity, float4 solverData_KernelSize, float4 solverData_KernelFactors)\n{\n
-      \   \n    float3 dist;\n    float3 n = 0;\n    #ifdef FLUVIO_INDEX_GRID\n    uint
-      neighborIndex;\n    for (uint j = 0; j < neighborCount; ++j)\n    {\n        neighborIndex
-      = GetNeighborIndex(solverData_Tex, solverData_TexSize, index, j);\n    #else\n
+      solverData_Fluid_GasConstant, float solverData_Fluid_Viscosity, float solverData_Fluid_SurfaceTension,
+      float solverData_Fluid_BuoyancyCoefficient, float3 solverData_Gravity, float4
+      solverData_KernelSize, float4 solverData_KernelFactors)\n{\n    \n    float3
+      dist;\n    float3 n = 0;\n    #ifdef FLUVIO_INDEX_GRID\n    uint neighborIndex;\n
+      \   for (uint j = 0; j < neighborCount; ++j)\n    {\n        neighborIndex =
+      GetNeighborIndex(solverData_Tex, solverData_TexSize, index, j);\n    #else\n
       \   float distLenSq;\n    for (uint neighborIndex = 0; neighborIndex < nbMax;
       ++neighborIndex)\n    {\n        if (index == neighborIndex) continue;\n        bool
-      neighborAlive = (attributeBuffer.Load((neighborIndex * 0x1 + 0xF000) << 2));\n
+      neighborAlive = (attributeBuffer.Load((neighborIndex * 0x1 + 0xD000) << 2));\n
       \       if (!neighborAlive) continue;\n    #endif\n    \n        float3 neighborPosition
       = asfloat(attributeBuffer.Load3((neighborIndex * 0x4 + 0x800) << 2));\n        float
       neighborMass = asfloat(attributeBuffer.Load((neighborIndex * 0x1 + 0x6800) <<
@@ -596,26 +546,25 @@ VisualEffectResource:
       \   : SV_GroupThreadID)\n{\n\tuint id = groupThreadId.x + groupId.x * NB_THREADS_PER_GROUP
       + groupId.y * dispatchWidth * NB_THREADS_PER_GROUP;\n\tuint index = id;\n\tif
       (id < nbMax)\n\t{\n#if VFX_USE_ALIVE_CURRENT\n\t\tbool alive = (attributeBuffer.Load((index
-      * 0x1 + 0xF000) << 2));\n\t\t\n\n\t\tif (alive)\n\t\t{\n\t\t\tfloat lifetime
+      * 0x1 + 0xD000) << 2));\n\t\t\n\n\t\tif (alive)\n\t\t{\n\t\t\tfloat lifetime
       = asfloat(attributeBuffer.Load((index * 0x1 + 0x0) << 2));\n\t\t\tfloat3 position
       = asfloat(attributeBuffer.Load3((index * 0x4 + 0x800) << 2));\n\t\t\tfloat mass
       = asfloat(attributeBuffer.Load((index * 0x1 + 0x6800) << 2));\n\t\t\tfloat3
       oldPosition = asfloat(attributeBuffer.Load3((index * 0x4 + 0x7000) << 2));\n\t\t\tfloat4
       densityPressure = asfloat(attributeBuffer.Load4((index * 0x4 + 0x9000) << 2));\n\t\t\tfloat4
       normal = asfloat(attributeBuffer.Load4((index * 0x4 + 0xB000) << 2));\n\t\t\tfloat
-      age = asfloat(attributeBuffer.Load((index * 0x1 + 0xF800) << 2));\n\t\t\t\n\n\t\t\t\n#if
-      VFX_USE_OLDPOSITION_CURRENT\n\t\t\toldPosition = position;\n#endif\n\t\t\t\n\t\t\tSurfaceNormal(index,
-      position, alive, mass, densityPressure,  /*inout */normal, solverData_Fluid_SmoothingDistance_a,
-      solverData_Fluid_ParticleMass_a, solverData_Fluid_Density_a, solverData_Fluid_MinimumDensity_a,
-      solverData_Fluid_GasConstant_a, solverData_Fluid_Viscosity_a, solverData_Fluid_TurbulenceProbability_a,
-      solverData_Fluid_SurfaceTension_a, solverData_Fluid_BuoyancyCoefficient_a, solverData_Gravity_a,
-      solverData_KernelSize_a, solverData_KernelFactors_a);\n\t\t\tReap(age, lifetime,
-      \ /*inout */alive);\n\t\t\t\n\n\t\t\tif (alive)\n\t\t\t{\n\t\t\t\tattributeBuffer.Store3((index
+      age = asfloat(attributeBuffer.Load((index * 0x1 + 0xD800) << 2));\n\t\t\t\n\n\t\t\t\n#if
+      VFX_USE_OLDPOSITION_CURRENT\n\t\t\toldPosition = position;\n#endif\n\t\t\t\n\t\t\t{\n\t\t\t
+      \   SurfaceNormal(index, position, alive, mass, densityPressure,  /*inout */normal,
+      (float)0.38125, (float)7.625, (float)998.29, (float)9.9829, (float)0.01, (float)0.3,
+      (float)0.728, (float)0, float3(0,-9.81,0), float4(0.38125,0.1453516,0.05541528,0),
+      float4(9206.448,1554.828,43.08061,0));\n\t\t\t}\n\t\t\tReap(age, lifetime,  /*inout
+      */alive);\n\t\t\t\n\n\t\t\tif (alive)\n\t\t\t{\n\t\t\t\tattributeBuffer.Store3((index
       * 0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\t\t\tattributeBuffer.Store4((index
       * 0x4 + 0xB000) << 2,asuint(normal));\n\t\t\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n
       \               uint indirectIndex = indirectBuffer.IncrementCounter();\n\t\t\t\tindirectBuffer[indirectIndex]
       = index;\n#endif\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tattributeBuffer.Store((index
-      * 0x1 + 0xF000) << 2,uint(alive));\n\t\t\t\t\n\n\t\t\t\tuint deadIndex = deadListOut.IncrementCounter();\n\t\t\t\tdeadListOut[deadIndex]
+      * 0x1 + 0xD000) << 2,uint(alive));\n\t\t\t\t\n\n\t\t\t\tuint deadIndex = deadListOut.IncrementCounter();\n\t\t\t\tdeadListOut[deadIndex]
       = index;\n\t\t\t}\n\t\t}\n#else\n\t\tfloat lifetime = asfloat(attributeBuffer.Load((index
       * 0x1 + 0x0) << 2));\n\t\tfloat3 position = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x800) << 2));\n\t\tfloat mass = asfloat(attributeBuffer.Load((index
@@ -623,59 +572,49 @@ VisualEffectResource:
       * 0x4 + 0x7000) << 2));\n\t\tfloat4 densityPressure = asfloat(attributeBuffer.Load4((index
       * 0x4 + 0x9000) << 2));\n\t\tfloat4 normal = asfloat(attributeBuffer.Load4((index
       * 0x4 + 0xB000) << 2));\n\t\tbool alive = (attributeBuffer.Load((index * 0x1
-      + 0xF000) << 2));\n\t\tfloat age = asfloat(attributeBuffer.Load((index * 0x1
-      + 0xF800) << 2));\n\t\t\n\n\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\toldPosition
-      = position;\n#endif\n\t\t\n\t\tSurfaceNormal(index, position, alive, mass, densityPressure,
-      \ /*inout */normal, solverData_Fluid_SmoothingDistance_a, solverData_Fluid_ParticleMass_a,
-      solverData_Fluid_Density_a, solverData_Fluid_MinimumDensity_a, solverData_Fluid_GasConstant_a,
-      solverData_Fluid_Viscosity_a, solverData_Fluid_TurbulenceProbability_a, solverData_Fluid_SurfaceTension_a,
-      solverData_Fluid_BuoyancyCoefficient_a, solverData_Gravity_a, solverData_KernelSize_a,
-      solverData_KernelFactors_a);\n\t\tReap(age, lifetime,  /*inout */alive);\n\t\t\n\n\t\tattributeBuffer.Store3((index
-      * 0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\tattributeBuffer.Store4((index
-      * 0x4 + 0xB000) << 2,asuint(normal));\n\t\tattributeBuffer.Store((index * 0x1
-      + 0xF000) << 2,uint(alive));\n\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n        uint
-      indirectIndex = indirectBuffer.IncrementCounter();\n\t\tindirectBuffer[indirectIndex]
-      = index;\n#endif\n#endif\n\t}\n}\n"
+      + 0xD000) << 2));\n\t\tfloat age = asfloat(attributeBuffer.Load((index * 0x1
+      + 0xD800) << 2));\n\t\t\n\n\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\toldPosition
+      = position;\n#endif\n\t\t\n\t\t{\n\t\t    SurfaceNormal(index, position, alive,
+      mass, densityPressure,  /*inout */normal, (float)0.38125, (float)7.625, (float)998.29,
+      (float)9.9829, (float)0.01, (float)0.3, (float)0.728, (float)0, float3(0,-9.81,0),
+      float4(0.38125,0.1453516,0.05541528,0), float4(9206.448,1554.828,43.08061,0));\n\t\t}\n\t\tReap(age,
+      lifetime,  /*inout */alive);\n\t\t\n\n\t\tattributeBuffer.Store3((index * 0x4
+      + 0x7000) << 2,asuint(oldPosition));\n\t\tattributeBuffer.Store4((index * 0x4
+      + 0xB000) << 2,asuint(normal));\n\t\tattributeBuffer.Store((index * 0x1 + 0xD000)
+      << 2,uint(alive));\n\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n        uint indirectIndex
+      = indirectBuffer.IncrementCounter();\n\t\tindirectBuffer[indirectIndex] = index;\n#endif\n#endif\n\t}\n}\n"
   - compute: 1
     name: '[System 1]F Update'
     source: "#pragma kernel CSMain\n#include \"HLSLSupport.cginc\"\n#define NB_THREADS_PER_GROUP
       64\n#define VFX_USE_LIFETIME_CURRENT 1\n#define VFX_USE_POSITION_CURRENT 1\n#define
       VFX_USE_VELOCITY_CURRENT 1\n#define VFX_USE_FORCE_CURRENT 1\n#define VFX_USE_MASS_CURRENT
       1\n#define VFX_USE_OLDPOSITION_CURRENT 1\n#define VFX_USE_DENSITYPRESSURE_CURRENT
-      1\n#define VFX_USE_NORMAL_CURRENT 1\n#define VFX_USE_VORTICITYTURBULENCE_CURRENT
-      1\n#define VFX_USE_ALIVE_CURRENT 1\n#define VFX_USE_AGE_CURRENT 1\n#define VFX_HAS_INDIRECT_DRAW
-      1\n#define VFX_WORLD_SPACE 1\n\n\nCBUFFER_START(parameters)\n    float4 solverData_KernelSize_a;\n
-      \   float4 solverData_KernelFactors_a;\n    float3 solverData_Gravity_a;\n    float
-      solverData_Fluid_SmoothingDistance_a;\n    float solverData_Fluid_ParticleMass_a;\n
-      \   float solverData_Fluid_Density_a;\n    float solverData_Fluid_MinimumDensity_a;\n
-      \   float solverData_Fluid_GasConstant_a;\n    float solverData_Fluid_Viscosity_a;\n
-      \   float solverData_Fluid_TurbulenceProbability_a;\n    float solverData_Fluid_SurfaceTension_a;\n
-      \   float solverData_Fluid_BuoyancyCoefficient_a;\nCBUFFER_END\n\n\n#include
-      \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
+      1\n#define VFX_USE_NORMAL_CURRENT 1\n#define VFX_USE_ALIVE_CURRENT 1\n#define
+      VFX_USE_AGE_CURRENT 1\n#define VFX_HAS_INDIRECT_DRAW 1\n#define VFX_WORLD_SPACE
+      1\n\n\n\n#include \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.thinksquirrel.fluviofx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
       attributeBuffer;\n\n#if VFX_USE_ALIVE_CURRENT\nRWStructuredBuffer<uint> deadListOut;\n#endif\n\n#if
       VFX_HAS_INDIRECT_DRAW\nRWStructuredBuffer<uint> indirectBuffer;\n#endif\n\nCBUFFER_START(updateParams)\n
       \   uint nbMax;\n\tuint dispatchWidth;\n\tuint systemSeed;\nCBUFFER_END\n\nvoid
-      CalculateForces_3B85AF8(uint index, float3 position, bool alive, float3 velocity,
-      float mass, float4 densityPressure, float4 normal, inout float4 vorticityTurbulence,
-      inout float3 force, float solverData_Fluid_SmoothingDistance, float solverData_Fluid_ParticleMass,
-      float solverData_Fluid_Density, float solverData_Fluid_MinimumDensity, float
-      solverData_Fluid_GasConstant, float solverData_Fluid_Viscosity, float solverData_Fluid_TurbulenceProbability,
-      float solverData_Fluid_SurfaceTension, float solverData_Fluid_BuoyancyCoefficient,
-      float3 solverData_Gravity, float4 solverData_KernelSize, float4 solverData_KernelFactors)
-      /*SurfaceTension:True Turbulence:True Gravity:True BuoyancyForce:True */\n{\n
-      \   \n    #define FLUVIO_SURFACE_TENSION_ENABLED 1\n    #define FLUVIO_TURBULENCE_ENABLED
-      1\n    #define FLUVIO_GRAVITY_ENABLED 1\n    #define FLUVIO_BUOYANCY_FORCE_ENABLED
-      1\n    float3 dist, f, invNeighborDensity;\n    float scalar;\n    \n    #ifdef
-      FLUVIO_INDEX_GRID\n    uint neighborIndex;\n    for (uint j = 0; j < neighborCount;
-      ++j)\n    {\n        neighborIndex = GetNeighborIndex(solverData_Tex, solverData_TexSize,
-      index, j);\n    #else\n    float distLenSq;\n    for (uint neighborIndex = 0;
-      neighborIndex < nbMax; ++neighborIndex)\n    {\n        if (index == neighborIndex)
-      continue;\n        bool neighborAlive = (attributeBuffer.Load((neighborIndex
-      * 0x1 + 0xF000) << 2));\n        if (!neighborAlive) continue;\n    #endif\n
-      \   \n        float3 neighborPosition = asfloat(attributeBuffer.Load3((neighborIndex
-      * 0x4 + 0x800) << 2));\n        float neighborMass = asfloat(attributeBuffer.Load((neighborIndex
-      * 0x1 + 0x6800) << 2));\n        float3 neighborVelocity = asfloat(attributeBuffer.Load3((neighborIndex
+      CalculateForces_2661D(uint index, float3 position, bool alive, float3 velocity,
+      float mass, float4 densityPressure, float4 normal, inout float3 force, float
+      solverData_Fluid_SmoothingDistance, float solverData_Fluid_ParticleMass, float
+      solverData_Fluid_Density, float solverData_Fluid_MinimumDensity, float solverData_Fluid_GasConstant,
+      float solverData_Fluid_Viscosity, float solverData_Fluid_SurfaceTension, float
+      solverData_Fluid_BuoyancyCoefficient, float3 solverData_Gravity, float4 solverData_KernelSize,
+      float4 solverData_KernelFactors) /*SurfaceTension:True Gravity:True BuoyancyForce:True
+      */\n{\n    \n    #define FLUVIO_SURFACE_TENSION_ENABLED 1\n    #define FLUVIO_GRAVITY_ENABLED
+      1\n    #define FLUVIO_BUOYANCY_FORCE_ENABLED 1\n    float3 dist, f, invNeighborDensity;\n
+      \   float scalar;\n    \n    #ifdef FLUVIO_INDEX_GRID\n    uint neighborIndex;\n
+      \   for (uint j = 0; j < neighborCount; ++j)\n    {\n        neighborIndex =
+      GetNeighborIndex(solverData_Tex, solverData_TexSize, index, j);\n    #else\n
+      \   float distLenSq;\n    for (uint neighborIndex = 0; neighborIndex < nbMax;
+      ++neighborIndex)\n    {\n        if (index == neighborIndex) continue;\n        bool
+      neighborAlive = (attributeBuffer.Load((neighborIndex * 0x1 + 0xD000) << 2));\n
+      \       if (!neighborAlive) continue;\n    #endif\n    \n        float3 neighborPosition
+      = asfloat(attributeBuffer.Load3((neighborIndex * 0x4 + 0x800) << 2));\n        float
+      neighborMass = asfloat(attributeBuffer.Load((neighborIndex * 0x1 + 0x6800) <<
+      2));\n        float3 neighborVelocity = asfloat(attributeBuffer.Load3((neighborIndex
       * 0x4 + 0x2800) << 2));\n        float4 neighborDensityPressure = asfloat(attributeBuffer.Load4((neighborIndex
       * 0x4 + 0x9000) << 2));\n    \n        dist = position - neighborPosition;\n
       \   #ifndef FLUVIO_INDEX_GRID\n        distLenSq = dot(dist, dist);\n        if
@@ -695,52 +634,38 @@ VisualEffectResource:
       Poly6CalculateLaplacian(dist, solverData_KernelFactors.x, solverData_KernelSize.y)\n
       \               * solverData_Fluid_SurfaceTension\n                * 1.0f /
       neighborDensityPressure.x;\n    \n            f = normal.xyz * scalar;\n            force
-      -= f;\n        }\n    #endif\n    \n    #ifdef FLUVIO_TURBULENCE_ENABLED\n        //
-      Turbulence term (external)\n        float4 neighborVorticityTurbulence = asfloat(attributeBuffer.Load4((neighborIndex
-      * 0x4 + 0xD000) << 2));\n        if (vorticityTurbulence.w >= solverData_Fluid_TurbulenceProbability
-      && neighborVorticityTurbulence.w < solverData_Fluid_TurbulenceProbability)\n
-      \       {\n            scalar = neighborMass\n                * ViscosityCalculateLaplacian(\n
-      \                   dist,\n                    solverData_KernelFactors.z,\n
-      \                   solverData_KernelSize.z,\n                    solverData_KernelSize.x)\n
-      \               * invNeighborDensity;\n    \n            vorticityTurbulence
-      = scalar * (neighborVorticityTurbulence - vorticityTurbulence);\n            f
-      = clamp_len(FLUVIO_TURBULENCE_CONSTANT * cross(dist, vorticityTurbulence.xyz),
-      FLUVIO_MAX_SQR_VELOCITY_CHANGE * mass);\n    \n            force += f;\n        }\n
-      \   #endif\n    }\n    \n    #ifdef FLUVIO_GRAVITY_ENABLED\n    // Gravity term
-      (external)\n    force += solverData_Gravity * mass;\n    #ifdef FLUVIO_BUOYANCY_FORCE_ENABLED\n
-      \   // Buoyancy term (external)\n    force += solverData_Gravity * solverData_Fluid_BuoyancyCoefficient
-      * (densityPressure.x - solverData_Fluid_Density);\n    #endif\n    #endif\n
-      \   \n}\nvoid Reap(float age, float lifetime, inout bool alive)\n{\n    if(age
-      > lifetime) { alive = false; }\n}\n\n\n\n[numthreads(NB_THREADS_PER_GROUP,1,1)]\nvoid
-      CSMain(uint3 groupId          : SV_GroupID,\n            uint3 groupThreadId
-      \   : SV_GroupThreadID)\n{\n\tuint id = groupThreadId.x + groupId.x * NB_THREADS_PER_GROUP
-      + groupId.y * dispatchWidth * NB_THREADS_PER_GROUP;\n\tuint index = id;\n\tif
-      (id < nbMax)\n\t{\n#if VFX_USE_ALIVE_CURRENT\n\t\tbool alive = (attributeBuffer.Load((index
-      * 0x1 + 0xF000) << 2));\n\t\t\n\n\t\tif (alive)\n\t\t{\n\t\t\tfloat lifetime
-      = asfloat(attributeBuffer.Load((index * 0x1 + 0x0) << 2));\n\t\t\tfloat3 position
-      = asfloat(attributeBuffer.Load3((index * 0x4 + 0x800) << 2));\n\t\t\tfloat3
-      velocity = asfloat(attributeBuffer.Load3((index * 0x4 + 0x2800) << 2));\n\t\t\tfloat3
-      force = asfloat(attributeBuffer.Load3((index * 0x4 + 0x4800) << 2));\n\t\t\tfloat
-      mass = asfloat(attributeBuffer.Load((index * 0x1 + 0x6800) << 2));\n\t\t\tfloat3
-      oldPosition = asfloat(attributeBuffer.Load3((index * 0x4 + 0x7000) << 2));\n\t\t\tfloat4
-      densityPressure = asfloat(attributeBuffer.Load4((index * 0x4 + 0x9000) << 2));\n\t\t\tfloat4
-      normal = asfloat(attributeBuffer.Load4((index * 0x4 + 0xB000) << 2));\n\t\t\tfloat4
-      vorticityTurbulence = asfloat(attributeBuffer.Load4((index * 0x4 + 0xD000) <<
-      2));\n\t\t\tfloat age = asfloat(attributeBuffer.Load((index * 0x1 + 0xF800)
-      << 2));\n\t\t\t\n\n\t\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\t\toldPosition
-      = position;\n#endif\n\t\t\t\n\t\t\tCalculateForces_3B85AF8(index, position,
-      alive, velocity, mass, densityPressure, normal,  /*inout */vorticityTurbulence,
-      \ /*inout */force, solverData_Fluid_SmoothingDistance_a, solverData_Fluid_ParticleMass_a,
-      solverData_Fluid_Density_a, solverData_Fluid_MinimumDensity_a, solverData_Fluid_GasConstant_a,
-      solverData_Fluid_Viscosity_a, solverData_Fluid_TurbulenceProbability_a, solverData_Fluid_SurfaceTension_a,
-      solverData_Fluid_BuoyancyCoefficient_a, solverData_Gravity_a, solverData_KernelSize_a,
-      solverData_KernelFactors_a);\n\t\t\tReap(age, lifetime,  /*inout */alive);\n\t\t\t\n\n\t\t\tif
-      (alive)\n\t\t\t{\n\t\t\t\tattributeBuffer.Store3((index * 0x4 + 0x4800) << 2,asuint(force));\n\t\t\t\tattributeBuffer.Store3((index
-      * 0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\t\t\tattributeBuffer.Store4((index
-      * 0x4 + 0xD000) << 2,asuint(vorticityTurbulence));\n\t\t\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n
+      -= f;\n        }\n    #endif\n    }\n    \n    #ifdef FLUVIO_GRAVITY_ENABLED\n
+      \   // Gravity term (external)\n    force += solverData_Gravity * mass;\n    #ifdef
+      FLUVIO_BUOYANCY_FORCE_ENABLED\n    // Buoyancy term (external)\n    force +=
+      solverData_Gravity * solverData_Fluid_BuoyancyCoefficient * (densityPressure.x
+      - solverData_Fluid_Density);\n    #endif\n    #endif\n    \n}\nvoid Reap(float
+      age, float lifetime, inout bool alive)\n{\n    if(age > lifetime) { alive =
+      false; }\n}\n\n\n\n[numthreads(NB_THREADS_PER_GROUP,1,1)]\nvoid CSMain(uint3
+      groupId          : SV_GroupID,\n            uint3 groupThreadId    : SV_GroupThreadID)\n{\n\tuint
+      id = groupThreadId.x + groupId.x * NB_THREADS_PER_GROUP + groupId.y * dispatchWidth
+      * NB_THREADS_PER_GROUP;\n\tuint index = id;\n\tif (id < nbMax)\n\t{\n#if VFX_USE_ALIVE_CURRENT\n\t\tbool
+      alive = (attributeBuffer.Load((index * 0x1 + 0xD000) << 2));\n\t\t\n\n\t\tif
+      (alive)\n\t\t{\n\t\t\tfloat lifetime = asfloat(attributeBuffer.Load((index *
+      0x1 + 0x0) << 2));\n\t\t\tfloat3 position = asfloat(attributeBuffer.Load3((index
+      * 0x4 + 0x800) << 2));\n\t\t\tfloat3 velocity = asfloat(attributeBuffer.Load3((index
+      * 0x4 + 0x2800) << 2));\n\t\t\tfloat3 force = asfloat(attributeBuffer.Load3((index
+      * 0x4 + 0x4800) << 2));\n\t\t\tfloat mass = asfloat(attributeBuffer.Load((index
+      * 0x1 + 0x6800) << 2));\n\t\t\tfloat3 oldPosition = asfloat(attributeBuffer.Load3((index
+      * 0x4 + 0x7000) << 2));\n\t\t\tfloat4 densityPressure = asfloat(attributeBuffer.Load4((index
+      * 0x4 + 0x9000) << 2));\n\t\t\tfloat4 normal = asfloat(attributeBuffer.Load4((index
+      * 0x4 + 0xB000) << 2));\n\t\t\tfloat age = asfloat(attributeBuffer.Load((index
+      * 0x1 + 0xD800) << 2));\n\t\t\t\n\n\t\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\t\toldPosition
+      = position;\n#endif\n\t\t\t\n\t\t\t{\n\t\t\t    CalculateForces_2661D(index,
+      position, alive, velocity, mass, densityPressure, normal,  /*inout */force,
+      (float)0.38125, (float)7.625, (float)998.29, (float)9.9829, (float)0.01, (float)0.3,
+      (float)0.728, (float)0, float3(0,-9.81,0), float4(0.38125,0.1453516,0.05541528,0),
+      float4(9206.448,1554.828,43.08061,0));\n\t\t\t}\n\t\t\tReap(age, lifetime,  /*inout
+      */alive);\n\t\t\t\n\n\t\t\tif (alive)\n\t\t\t{\n\t\t\t\tattributeBuffer.Store3((index
+      * 0x4 + 0x4800) << 2,asuint(force));\n\t\t\t\tattributeBuffer.Store3((index
+      * 0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\t\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n
       \               uint indirectIndex = indirectBuffer.IncrementCounter();\n\t\t\t\tindirectBuffer[indirectIndex]
       = index;\n#endif\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tattributeBuffer.Store((index
-      * 0x1 + 0xF000) << 2,uint(alive));\n\t\t\t\t\n\n\t\t\t\tuint deadIndex = deadListOut.IncrementCounter();\n\t\t\t\tdeadListOut[deadIndex]
+      * 0x1 + 0xD000) << 2,uint(alive));\n\t\t\t\t\n\n\t\t\t\tuint deadIndex = deadListOut.IncrementCounter();\n\t\t\t\tdeadListOut[deadIndex]
       = index;\n\t\t\t}\n\t\t}\n#else\n\t\tfloat lifetime = asfloat(attributeBuffer.Load((index
       * 0x1 + 0x0) << 2));\n\t\tfloat3 position = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x800) << 2));\n\t\tfloat3 velocity = asfloat(attributeBuffer.Load3((index
@@ -749,23 +674,18 @@ VisualEffectResource:
       * 0x1 + 0x6800) << 2));\n\t\tfloat3 oldPosition = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x7000) << 2));\n\t\tfloat4 densityPressure = asfloat(attributeBuffer.Load4((index
       * 0x4 + 0x9000) << 2));\n\t\tfloat4 normal = asfloat(attributeBuffer.Load4((index
-      * 0x4 + 0xB000) << 2));\n\t\tfloat4 vorticityTurbulence = asfloat(attributeBuffer.Load4((index
-      * 0x4 + 0xD000) << 2));\n\t\tbool alive = (attributeBuffer.Load((index * 0x1
-      + 0xF000) << 2));\n\t\tfloat age = asfloat(attributeBuffer.Load((index * 0x1
-      + 0xF800) << 2));\n\t\t\n\n\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\toldPosition
-      = position;\n#endif\n\t\t\n\t\tCalculateForces_3B85AF8(index, position, alive,
-      velocity, mass, densityPressure, normal,  /*inout */vorticityTurbulence,  /*inout
-      */force, solverData_Fluid_SmoothingDistance_a, solverData_Fluid_ParticleMass_a,
-      solverData_Fluid_Density_a, solverData_Fluid_MinimumDensity_a, solverData_Fluid_GasConstant_a,
-      solverData_Fluid_Viscosity_a, solverData_Fluid_TurbulenceProbability_a, solverData_Fluid_SurfaceTension_a,
-      solverData_Fluid_BuoyancyCoefficient_a, solverData_Gravity_a, solverData_KernelSize_a,
-      solverData_KernelFactors_a);\n\t\tReap(age, lifetime,  /*inout */alive);\n\t\t\n\n\t\tattributeBuffer.Store3((index
-      * 0x4 + 0x4800) << 2,asuint(force));\n\t\tattributeBuffer.Store3((index * 0x4
-      + 0x7000) << 2,asuint(oldPosition));\n\t\tattributeBuffer.Store4((index * 0x4
-      + 0xD000) << 2,asuint(vorticityTurbulence));\n\t\tattributeBuffer.Store((index
-      * 0x1 + 0xF000) << 2,uint(alive));\n\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n        uint
-      indirectIndex = indirectBuffer.IncrementCounter();\n\t\tindirectBuffer[indirectIndex]
-      = index;\n#endif\n#endif\n\t}\n}\n"
+      * 0x4 + 0xB000) << 2));\n\t\tbool alive = (attributeBuffer.Load((index * 0x1
+      + 0xD000) << 2));\n\t\tfloat age = asfloat(attributeBuffer.Load((index * 0x1
+      + 0xD800) << 2));\n\t\t\n\n\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\toldPosition
+      = position;\n#endif\n\t\t\n\t\t{\n\t\t    CalculateForces_2661D(index, position,
+      alive, velocity, mass, densityPressure, normal,  /*inout */force, (float)0.38125,
+      (float)7.625, (float)998.29, (float)9.9829, (float)0.01, (float)0.3, (float)0.728,
+      (float)0, float3(0,-9.81,0), float4(0.38125,0.1453516,0.05541528,0), float4(9206.448,1554.828,43.08061,0));\n\t\t}\n\t\tReap(age,
+      lifetime,  /*inout */alive);\n\t\t\n\n\t\tattributeBuffer.Store3((index * 0x4
+      + 0x4800) << 2,asuint(force));\n\t\tattributeBuffer.Store3((index * 0x4 + 0x7000)
+      << 2,asuint(oldPosition));\n\t\tattributeBuffer.Store((index * 0x1 + 0xD000)
+      << 2,uint(alive));\n\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n        uint indirectIndex
+      = indirectBuffer.IncrementCounter();\n\t\tindirectBuffer[indirectIndex] = index;\n#endif\n#endif\n\t}\n}\n"
   - compute: 1
     name: '[System 1]G Update'
     source: "#pragma kernel CSMain\n#include \"HLSLSupport.cginc\"\n#define NB_THREADS_PER_GROUP
@@ -773,13 +693,8 @@ VisualEffectResource:
       VFX_USE_VELOCITY_CURRENT 1\n#define VFX_USE_FORCE_CURRENT 1\n#define VFX_USE_MASS_CURRENT
       1\n#define VFX_USE_OLDPOSITION_CURRENT 1\n#define VFX_USE_ALIVE_CURRENT 1\n#define
       VFX_USE_AGE_CURRENT 1\n#define VFX_HAS_INDIRECT_DRAW 1\n#define VFX_WORLD_SPACE
-      1\n\n\nCBUFFER_START(parameters)\n    float4 solverData_KernelSize_a;\n    float4
-      solverData_KernelFactors_a;\n    float3 solverData_Gravity_a;\n    float solverData_Fluid_SmoothingDistance_a;\n
-      \   float solverData_Fluid_ParticleMass_a;\n    float solverData_Fluid_Density_a;\n
-      \   float solverData_Fluid_MinimumDensity_a;\n    float solverData_Fluid_GasConstant_a;\n
-      \   float solverData_Fluid_Viscosity_a;\n    float solverData_Fluid_TurbulenceProbability_a;\n
-      \   float solverData_Fluid_SurfaceTension_a;\n    float solverData_Fluid_BuoyancyCoefficient_a;\n
-      \   float dt_a;\n    uint3 PADDING_0;\nCBUFFER_END\n\n\n#include \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
+      1\n\n\nCBUFFER_START(parameters)\n    float dt_a;\n    uint3 PADDING_0;\nCBUFFER_END\n\n\n#include
+      \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.thinksquirrel.fluviofx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
       attributeBuffer;\n\n#if VFX_USE_ALIVE_CURRENT\nRWStructuredBuffer<uint> deadListOut;\n#endif\n\n#if
       VFX_HAS_INDIRECT_DRAW\nRWStructuredBuffer<uint> indirectBuffer;\n#endif\n\nCBUFFER_START(updateParams)\n
@@ -788,43 +703,41 @@ VisualEffectResource:
       float3 force, inout float3 velocity, float3 oldPosition, float solverData_Fluid_SmoothingDistance,
       float solverData_Fluid_ParticleMass, float solverData_Fluid_Density, float solverData_Fluid_MinimumDensity,
       float solverData_Fluid_GasConstant, float solverData_Fluid_Viscosity, float
-      solverData_Fluid_TurbulenceProbability, float solverData_Fluid_SurfaceTension,
-      float solverData_Fluid_BuoyancyCoefficient, float3 solverData_Gravity, float4
-      solverData_KernelSize, float4 solverData_KernelFactors, float dt) /*IntegrationMode:Verlet
-      */\n{\n    \n    float invMass = 1.0f / mass;\n    float3 acceleration = force
-      * invMass;\n    float3 v = dt * acceleration;\n    \n    // Discard excessive
-      velocities\n    if (any(isnan(v) || isinf(v)) || dot(v, v) > FLUVIO_MAX_SQR_VELOCITY_CHANGE)\n
-      \   {\n        v = 0;\n    }\n    \n    \n    float3 x = position;\n    position
-      = (x * 2) - oldPosition + ((v + velocity) * dt);\n    velocity += v;\n}\nvoid
-      Age(inout float age, float deltaTime)\n{\n    age += deltaTime;\n}\nvoid Reap(float
-      age, float lifetime, inout bool alive)\n{\n    if(age > lifetime) { alive =
-      false; }\n}\n\n\n\n[numthreads(NB_THREADS_PER_GROUP,1,1)]\nvoid CSMain(uint3
-      groupId          : SV_GroupID,\n            uint3 groupThreadId    : SV_GroupThreadID)\n{\n\tuint
-      id = groupThreadId.x + groupId.x * NB_THREADS_PER_GROUP + groupId.y * dispatchWidth
-      * NB_THREADS_PER_GROUP;\n\tuint index = id;\n\tif (id < nbMax)\n\t{\n#if VFX_USE_ALIVE_CURRENT\n\t\tbool
-      alive = (attributeBuffer.Load((index * 0x1 + 0xF000) << 2));\n\t\t\n\n\t\tif
-      (alive)\n\t\t{\n\t\t\tfloat lifetime = asfloat(attributeBuffer.Load((index *
-      0x1 + 0x0) << 2));\n\t\t\tfloat3 position = asfloat(attributeBuffer.Load3((index
-      * 0x4 + 0x800) << 2));\n\t\t\tfloat3 velocity = asfloat(attributeBuffer.Load3((index
-      * 0x4 + 0x2800) << 2));\n\t\t\tfloat3 force = asfloat(attributeBuffer.Load3((index
-      * 0x4 + 0x4800) << 2));\n\t\t\tfloat mass = asfloat(attributeBuffer.Load((index
-      * 0x1 + 0x6800) << 2));\n\t\t\tfloat3 oldPosition = asfloat(attributeBuffer.Load3((index
-      * 0x4 + 0x7000) << 2));\n\t\t\tfloat age = asfloat(attributeBuffer.Load((index
-      * 0x1 + 0xF800) << 2));\n\t\t\t\n\n\t\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\t\toldPosition
-      = position;\n#endif\n\t\t\t\n\t\t\tIntegrateParticles_0(index,  /*inout */position,
-      alive, mass, force,  /*inout */velocity, oldPosition, solverData_Fluid_SmoothingDistance_a,
-      solverData_Fluid_ParticleMass_a, solverData_Fluid_Density_a, solverData_Fluid_MinimumDensity_a,
-      solverData_Fluid_GasConstant_a, solverData_Fluid_Viscosity_a, solverData_Fluid_TurbulenceProbability_a,
-      solverData_Fluid_SurfaceTension_a, solverData_Fluid_BuoyancyCoefficient_a, solverData_Gravity_a,
-      solverData_KernelSize_a, solverData_KernelFactors_a, dt_a);\n\t\t\tAge( /*inout
-      */age, dt_a);\n\t\t\tReap(age, lifetime,  /*inout */alive);\n\t\t\t\n\n\t\t\tif
-      (alive)\n\t\t\t{\n\t\t\t\tattributeBuffer.Store3((index * 0x4 + 0x800) << 2,asuint(position));\n\t\t\t\tattributeBuffer.Store3((index
+      solverData_Fluid_SurfaceTension, float solverData_Fluid_BuoyancyCoefficient,
+      float3 solverData_Gravity, float4 solverData_KernelSize, float4 solverData_KernelFactors,
+      float dt) /*IntegrationMode:Verlet */\n{\n    \n    float invMass = 1.0f / mass;\n
+      \   float3 acceleration = force * invMass;\n    float3 v = dt * acceleration;\n
+      \   \n    // Discard excessive velocities\n    if (any(isnan(v) || isinf(v))
+      || dot(v, v) > FLUVIO_MAX_SQR_VELOCITY_CHANGE)\n    {\n        v = 0;\n    }\n
+      \   \n    \n    float3 x = position;\n    position = (x * 2) - oldPosition +
+      ((v + velocity) * dt);\n    velocity += v;\n}\nvoid Age(inout float age, float
+      deltaTime)\n{\n    age += deltaTime;\n}\nvoid Reap(float age, float lifetime,
+      inout bool alive)\n{\n    if(age > lifetime) { alive = false; }\n}\n\n\n\n[numthreads(NB_THREADS_PER_GROUP,1,1)]\nvoid
+      CSMain(uint3 groupId          : SV_GroupID,\n            uint3 groupThreadId
+      \   : SV_GroupThreadID)\n{\n\tuint id = groupThreadId.x + groupId.x * NB_THREADS_PER_GROUP
+      + groupId.y * dispatchWidth * NB_THREADS_PER_GROUP;\n\tuint index = id;\n\tif
+      (id < nbMax)\n\t{\n#if VFX_USE_ALIVE_CURRENT\n\t\tbool alive = (attributeBuffer.Load((index
+      * 0x1 + 0xD000) << 2));\n\t\t\n\n\t\tif (alive)\n\t\t{\n\t\t\tfloat lifetime
+      = asfloat(attributeBuffer.Load((index * 0x1 + 0x0) << 2));\n\t\t\tfloat3 position
+      = asfloat(attributeBuffer.Load3((index * 0x4 + 0x800) << 2));\n\t\t\tfloat3
+      velocity = asfloat(attributeBuffer.Load3((index * 0x4 + 0x2800) << 2));\n\t\t\tfloat3
+      force = asfloat(attributeBuffer.Load3((index * 0x4 + 0x4800) << 2));\n\t\t\tfloat
+      mass = asfloat(attributeBuffer.Load((index * 0x1 + 0x6800) << 2));\n\t\t\tfloat3
+      oldPosition = asfloat(attributeBuffer.Load3((index * 0x4 + 0x7000) << 2));\n\t\t\tfloat
+      age = asfloat(attributeBuffer.Load((index * 0x1 + 0xD800) << 2));\n\t\t\t\n\n\t\t\t\n#if
+      VFX_USE_OLDPOSITION_CURRENT\n\t\t\toldPosition = position;\n#endif\n\t\t\t\n\t\t\t{\n\t\t\t
+      \   IntegrateParticles_0(index,  /*inout */position, alive, mass, force,  /*inout
+      */velocity, oldPosition, (float)0.38125, (float)7.625, (float)998.29, (float)9.9829,
+      (float)0.01, (float)0.3, (float)0.728, (float)0, float3(0,-9.81,0), float4(0.38125,0.1453516,0.05541528,0),
+      float4(9206.448,1554.828,43.08061,0), dt_a);\n\t\t\t}\n\t\t\tAge( /*inout */age,
+      dt_a);\n\t\t\tReap(age, lifetime,  /*inout */alive);\n\t\t\t\n\n\t\t\tif (alive)\n\t\t\t{\n\t\t\t\tattributeBuffer.Store3((index
+      * 0x4 + 0x800) << 2,asuint(position));\n\t\t\t\tattributeBuffer.Store3((index
       * 0x4 + 0x2800) << 2,asuint(velocity));\n\t\t\t\tattributeBuffer.Store3((index
       * 0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\t\t\tattributeBuffer.Store((index
-      * 0x1 + 0xF800) << 2,asuint(age));\n\t\t\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n
+      * 0x1 + 0xD800) << 2,asuint(age));\n\t\t\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n
       \               uint indirectIndex = indirectBuffer.IncrementCounter();\n\t\t\t\tindirectBuffer[indirectIndex]
       = index;\n#endif\n\t\t\t}\n\t\t\telse\n\t\t\t{\n\t\t\t\tattributeBuffer.Store((index
-      * 0x1 + 0xF000) << 2,uint(alive));\n\t\t\t\t\n\n\t\t\t\tuint deadIndex = deadListOut.IncrementCounter();\n\t\t\t\tdeadListOut[deadIndex]
+      * 0x1 + 0xD000) << 2,uint(alive));\n\t\t\t\t\n\n\t\t\t\tuint deadIndex = deadListOut.IncrementCounter();\n\t\t\t\tdeadListOut[deadIndex]
       = index;\n\t\t\t}\n\t\t}\n#else\n\t\tfloat lifetime = asfloat(attributeBuffer.Load((index
       * 0x1 + 0x0) << 2));\n\t\tfloat3 position = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x800) << 2));\n\t\tfloat3 velocity = asfloat(attributeBuffer.Load3((index
@@ -832,19 +745,17 @@ VisualEffectResource:
       * 0x4 + 0x4800) << 2));\n\t\tfloat mass = asfloat(attributeBuffer.Load((index
       * 0x1 + 0x6800) << 2));\n\t\tfloat3 oldPosition = asfloat(attributeBuffer.Load3((index
       * 0x4 + 0x7000) << 2));\n\t\tbool alive = (attributeBuffer.Load((index * 0x1
-      + 0xF000) << 2));\n\t\tfloat age = asfloat(attributeBuffer.Load((index * 0x1
-      + 0xF800) << 2));\n\t\t\n\n\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\toldPosition
-      = position;\n#endif\n\t\t\n\t\tIntegrateParticles_0(index,  /*inout */position,
-      alive, mass, force,  /*inout */velocity, oldPosition, solverData_Fluid_SmoothingDistance_a,
-      solverData_Fluid_ParticleMass_a, solverData_Fluid_Density_a, solverData_Fluid_MinimumDensity_a,
-      solverData_Fluid_GasConstant_a, solverData_Fluid_Viscosity_a, solverData_Fluid_TurbulenceProbability_a,
-      solverData_Fluid_SurfaceTension_a, solverData_Fluid_BuoyancyCoefficient_a, solverData_Gravity_a,
-      solverData_KernelSize_a, solverData_KernelFactors_a, dt_a);\n\t\tAge( /*inout
-      */age, dt_a);\n\t\tReap(age, lifetime,  /*inout */alive);\n\t\t\n\n\t\tattributeBuffer.Store3((index
-      * 0x4 + 0x800) << 2,asuint(position));\n\t\tattributeBuffer.Store3((index *
-      0x4 + 0x2800) << 2,asuint(velocity));\n\t\tattributeBuffer.Store3((index * 0x4
-      + 0x7000) << 2,asuint(oldPosition));\n\t\tattributeBuffer.Store((index * 0x1
-      + 0xF000) << 2,uint(alive));\n\t\tattributeBuffer.Store((index * 0x1 + 0xF800)
+      + 0xD000) << 2));\n\t\tfloat age = asfloat(attributeBuffer.Load((index * 0x1
+      + 0xD800) << 2));\n\t\t\n\n\t\t\n#if VFX_USE_OLDPOSITION_CURRENT\n\t\toldPosition
+      = position;\n#endif\n\t\t\n\t\t{\n\t\t    IntegrateParticles_0(index,  /*inout
+      */position, alive, mass, force,  /*inout */velocity, oldPosition, (float)0.38125,
+      (float)7.625, (float)998.29, (float)9.9829, (float)0.01, (float)0.3, (float)0.728,
+      (float)0, float3(0,-9.81,0), float4(0.38125,0.1453516,0.05541528,0), float4(9206.448,1554.828,43.08061,0),
+      dt_a);\n\t\t}\n\t\tAge( /*inout */age, dt_a);\n\t\tReap(age, lifetime,  /*inout
+      */alive);\n\t\t\n\n\t\tattributeBuffer.Store3((index * 0x4 + 0x800) << 2,asuint(position));\n\t\tattributeBuffer.Store3((index
+      * 0x4 + 0x2800) << 2,asuint(velocity));\n\t\tattributeBuffer.Store3((index *
+      0x4 + 0x7000) << 2,asuint(oldPosition));\n\t\tattributeBuffer.Store((index *
+      0x1 + 0xD000) << 2,uint(alive));\n\t\tattributeBuffer.Store((index * 0x1 + 0xD800)
       << 2,asuint(age));\n\t\t\n\n#if VFX_HAS_INDIRECT_DRAW\n        uint indirectIndex
       = indirectBuffer.IncrementCounter();\n\t\tindirectBuffer[indirectIndex] = index;\n#endif\n#endif\n\t}\n}\n"
   - compute: 1
@@ -854,12 +765,9 @@ VisualEffectResource:
       VFX_USE_SEED_CURRENT 1\n#define VFX_USE_DIRECTION_CURRENT 1\n#define VFX_USE_VELOCITY_CURRENT
       1\n#define VFX_USE_FORCE_CURRENT 1\n#define VFX_USE_MASS_CURRENT 1\n#define
       VFX_USE_OLDPOSITION_CURRENT 1\n#define VFX_USE_DENSITYPRESSURE_CURRENT 1\n#define
-      VFX_USE_NORMAL_CURRENT 1\n#define VFX_USE_VORTICITYTURBULENCE_CURRENT 1\n#define
-      VFX_USE_ALIVE_CURRENT 1\n#define VFX_USE_AGE_CURRENT 1\n#define VFX_WORLD_SPACE
-      1\n\n\nCBUFFER_START(parameters)\n    float3 Cone_center_b;\n    float Lifetime_a;\n
-      \   float3 Direction_c;\n    float Cone_radius0_b;\n    float2 sincosSlope_b;\n
-      \   float Cone_radius1_b;\n    float Cone_height_b;\n    float Cone_arc_b;\n
-      \   float fullConeHeight_b;\n    float Speed_c;\n    float DirectionBlend_c;\nCBUFFER_END\n\n\n#include
+      VFX_USE_NORMAL_CURRENT 1\n#define VFX_USE_ALIVE_CURRENT 1\n#define VFX_USE_AGE_CURRENT
+      1\n#define VFX_WORLD_SPACE 1\n\n\nCBUFFER_START(parameters)\n    float3 Cone_center_b;\n
+      \   uint PADDING_0;\n    float3 Direction_c;\n    uint PADDING_1;\nCBUFFER_END\n\n\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n\n\n\nRWByteAddressBuffer
       attributeBuffer;\nByteAddressBuffer sourceAttributeBuffer;\n\nCBUFFER_START(initParams)\n#if
@@ -911,17 +819,17 @@ VisualEffectResource:
       \       float3 direction = float3(0,0,1);\n        float3 velocity = float3(0,0,0);\n
       \       float3 force = float3(0,0,0);\n        float mass = (float)1;\n        float3
       oldPosition = float3(0,0,0);\n        float4 densityPressure = float4(0,0,0,0);\n
-      \       float4 normal = float4(0,0,0,0);\n        float4 vorticityTurbulence
-      = float4(0,0,0,0);\n        bool alive = (bool)true;\n        float age = (float)0;\n
-      \       \n\n#if VFX_USE_PARTICLEID_CURRENT\n         particleId = particleIndex;\n#endif\n#if
-      VFX_USE_SEED_CURRENT\n        seed = WangHash(particleIndex ^ systemSeed);\n#endif\n
-      \       \n        SetAttribute_F0142CB9( /*inout */lifetime, Lifetime_a);\n
-      \       {\n            PositionCone_267A9( /*inout */position,  /*inout */seed,
-      \ /*inout */direction, Cone_center_b, Cone_radius0_b, Cone_radius1_b, Cone_height_b,
-      Cone_arc_b, (float)1, fullConeHeight_b, sincosSlope_b);\n        }\n        VelocityDirection_18D(
-      /*inout */velocity,  /*inout */direction, Direction_c, Speed_c, DirectionBlend_c);\n
-      \       \n\n\n#if VFX_USE_ALIVE_CURRENT\n        if (alive)\n        {\n\t\t\tuint
-      deadIndex = deadListIn.DecrementCounter();\n            uint index = deadListIn[deadIndex];\n
+      \       float4 normal = float4(0,0,0,0);\n        bool alive = (bool)true;\n
+      \       float age = (float)0;\n        \n\n#if VFX_USE_PARTICLEID_CURRENT\n
+      \        particleId = particleIndex;\n#endif\n#if VFX_USE_SEED_CURRENT\n        seed
+      = WangHash(particleIndex ^ systemSeed);\n#endif\n        \n        {\n            SetAttribute_F0142CB9(
+      /*inout */lifetime, (float)0.8);\n        }\n        {\n            PositionCone_267A9(
+      /*inout */position,  /*inout */seed,  /*inout */direction, Cone_center_b, (float)0.2,
+      (float)0.3, (float)0.2, (float)6.283185, (float)1, (float)0.6, float2(0.4472136,0.8944272));\n
+      \       }\n        {\n            VelocityDirection_18D( /*inout */velocity,
+      \ /*inout */direction, Direction_c, (float)5, (float)1);\n        }\n        \n\n\n#if
+      VFX_USE_ALIVE_CURRENT\n        if (alive)\n        {\n\t\t\tuint deadIndex =
+      deadListIn.DecrementCounter();\n            uint index = deadListIn[deadIndex];\n
       \           attributeBuffer.Store((index * 0x1 + 0x0) << 2,asuint(lifetime));\n
       \           attributeBuffer.Store3((index * 0x4 + 0x800) << 2,asuint(position));\n
       \           attributeBuffer.Store3((index * 0x4 + 0x2800) << 2,asuint(velocity));\n
@@ -930,9 +838,8 @@ VisualEffectResource:
       \           attributeBuffer.Store3((index * 0x4 + 0x7000) << 2,asuint(oldPosition));\n
       \           attributeBuffer.Store4((index * 0x4 + 0x9000) << 2,asuint(densityPressure));\n
       \           attributeBuffer.Store4((index * 0x4 + 0xB000) << 2,asuint(normal));\n
-      \           attributeBuffer.Store4((index * 0x4 + 0xD000) << 2,asuint(vorticityTurbulence));\n
-      \           attributeBuffer.Store((index * 0x1 + 0xF000) << 2,uint(alive));\n
-      \           attributeBuffer.Store((index * 0x1 + 0xF800) << 2,asuint(age));\n
+      \           attributeBuffer.Store((index * 0x1 + 0xD000) << 2,uint(alive));\n
+      \           attributeBuffer.Store((index * 0x1 + 0xD800) << 2,asuint(age));\n
       \           \n\n        }\n#else\n        uint index = particleIndex;\n        attributeBuffer.Store((index
       * 0x1 + 0x0) << 2,asuint(lifetime));\n        attributeBuffer.Store3((index
       * 0x4 + 0x800) << 2,asuint(position));\n        attributeBuffer.Store3((index
@@ -941,10 +848,9 @@ VisualEffectResource:
       0x1 + 0x6800) << 2,asuint(mass));\n        attributeBuffer.Store3((index * 0x4
       + 0x7000) << 2,asuint(oldPosition));\n        attributeBuffer.Store4((index
       * 0x4 + 0x9000) << 2,asuint(densityPressure));\n        attributeBuffer.Store4((index
-      * 0x4 + 0xB000) << 2,asuint(normal));\n        attributeBuffer.Store4((index
-      * 0x4 + 0xD000) << 2,asuint(vorticityTurbulence));\n        attributeBuffer.Store((index
-      * 0x1 + 0xF000) << 2,uint(alive));\n        attributeBuffer.Store((index * 0x1
-      + 0xF800) << 2,asuint(age));\n        \n\n#endif\n    }\n}\n"
+      * 0x4 + 0xB000) << 2,asuint(normal));\n        attributeBuffer.Store((index
+      * 0x1 + 0xD000) << 2,uint(alive));\n        attributeBuffer.Store((index * 0x1
+      + 0xD800) << 2,asuint(age));\n        \n\n#endif\n    }\n}\n"
   - compute: 0
     name: '[System 1]Quad Output'
     source: "Shader \"Hidden/VFX/System 1/Quad Output\"\n{\n\tSubShader\n\t{\t\n\t\tCull
@@ -1011,7 +917,7 @@ VisualEffectResource:
       lifetime = asfloat(attributeBuffer.Load((index * 0x1 + 0x0) << 2));\n\t\t\t\t\t\tfloat3
       position = asfloat(attributeBuffer.Load3((index * 0x4 + 0x800) << 2));\n\t\t\t\t\t\tfloat3
       color = float3(1,1,1);\n\t\t\t\t\t\tfloat alpha = (float)1;\n\t\t\t\t\t\tbool
-      alive = (attributeBuffer.Load((index * 0x1 + 0xF000) << 2));\n\t\t\t\t\t\tfloat3
+      alive = (attributeBuffer.Load((index * 0x1 + 0xD000) << 2));\n\t\t\t\t\t\tfloat3
       axisX = float3(1,0,0);\n\t\t\t\t\t\tfloat3 axisY = float3(0,1,0);\n\t\t\t\t\t\tfloat3
       axisZ = float3(0,0,1);\n\t\t\t\t\t\tfloat angleX = (float)0;\n\t\t\t\t\t\tfloat
       angleY = (float)0;\n\t\t\t\t\t\tfloat angleZ = (float)0;\n\t\t\t\t\t\tfloat
@@ -1019,8 +925,8 @@ VisualEffectResource:
       pivotZ = (float)0;\n\t\t\t\t\t\tfloat size = (float)0.1;\n\t\t\t\t\t\tfloat
       scaleX = (float)1;\n\t\t\t\t\t\tfloat scaleY = (float)1;\n\t\t\t\t\t\tfloat
       scaleZ = (float)1;\n\t\t\t\t\t\tfloat age = asfloat(attributeBuffer.Load((index
-      * 0x1 + 0xF800) << 2));\n\t\t\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\t#else\n\t\t\t\t\t\tbool
-      alive = (attributeBuffer.Load((index * 0x1 + 0xF000) << 2));\n\t\t\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\tif
+      * 0x1 + 0xD800) << 2));\n\t\t\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\t#else\n\t\t\t\t\t\tbool
+      alive = (attributeBuffer.Load((index * 0x1 + 0xD000) << 2));\n\t\t\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\tif
       (!alive)\n\t\t\t\t\t\t\treturn o;\n\t\t\t\t\t\t\t\n\t\t\t\t\t\tfloat lifetime
       = asfloat(attributeBuffer.Load((index * 0x1 + 0x0) << 2));\n\t\t\t\t\t\tfloat3
       position = asfloat(attributeBuffer.Load3((index * 0x4 + 0x800) << 2));\n\t\t\t\t\t\tfloat3
@@ -1032,7 +938,7 @@ VisualEffectResource:
       pivotZ = (float)0;\n\t\t\t\t\t\tfloat size = (float)0.1;\n\t\t\t\t\t\tfloat
       scaleX = (float)1;\n\t\t\t\t\t\tfloat scaleY = (float)1;\n\t\t\t\t\t\tfloat
       scaleZ = (float)1;\n\t\t\t\t\t\tfloat age = asfloat(attributeBuffer.Load((index
-      * 0x1 + 0xF800) << 2));\n\t\t\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\t#endif\n\t\t\t\t\t\t\n\t\t\t\tOrient_0(
+      * 0x1 + 0xD800) << 2));\n\t\t\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\t#endif\n\t\t\t\t\t\t\n\t\t\t\tOrient_0(
       /*inout */axisX,  /*inout */axisY,  /*inout */axisZ);\n\t\t\t\tAttributeFromCurve_7BA3F6A(
       /*inout */alpha, age, lifetime, Alpha_b);\n\t\t\t\t\n\n\t\t\t\t\n\t\t\t\tif
       (!alive)\n\t\t\t\t\treturn o;\n\t\t\t\t\n\t\t\t\to.VFX_VARYING_UV.x = float(id
@@ -1097,191 +1003,65 @@ VisualEffectResource:
         data[0]: -1
         data[1]: -1
         data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 1
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 2
-        data[0]: 1
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
+        data[3]: 3
       - op: 1
         valueIndex: 3
         data[0]: -1
         data[1]: -1
         data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 4
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 5
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 21
+        data[3]: 3
+      - op: 9
         valueIndex: 6
-        data[0]: 2
-        data[1]: 2
+        data[0]: -1
+        data[1]: -1
         data[2]: -1
-        data[3]: 1
-      - op: 21
-        valueIndex: 7
-        data[0]: 6
-        data[1]: 2
-        data[2]: -1
-        data[3]: 1
-      - op: 3
-        valueIndex: 8
-        data[0]: 3
-        data[1]: 5
-        data[2]: 4
         data[3]: -1
-      - op: 21
-        valueIndex: 11
-        data[0]: 7
-        data[1]: 2
-        data[2]: -1
-        data[3]: 1
-      - op: 21
-        valueIndex: 12
-        data[0]: 8
-        data[1]: 8
-        data[2]: -1
-        data[3]: 3
-      - op: 21
-        valueIndex: 15
-        data[0]: 9
-        data[1]: 2
-        data[2]: -1
-        data[3]: 1
-      - op: 5
-        valueIndex: 16
-        data[0]: 10
-        data[1]: -1
-        data[2]: 1
-        data[3]: 3
-      - op: 5
-        valueIndex: 17
-        data[0]: 10
-        data[1]: -1
-        data[2]: 2
-        data[3]: 3
-      - op: 5
-        valueIndex: 18
-        data[0]: 10
-        data[1]: -1
-        data[2]: 0
-        data[3]: 3
       - op: 1
-        valueIndex: 19
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 20
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 21
-        valueIndex: 21
-        data[0]: 11
-        data[1]: 2
-        data[2]: -1
-        data[3]: 1
-      - op: 23
         valueIndex: 22
-        data[0]: 13
-        data[1]: 12
+        data[0]: -1
+        data[1]: -1
         data[2]: -1
-        data[3]: 1
+        data[3]: 13
       - op: 1
         valueIndex: 23
         data[0]: -1
         data[1]: -1
         data[2]: -1
         data[3]: 1
-      - op: 1
+      - op: 44
         valueIndex: 24
-        data[0]: -1
+        data[0]: 3
         data[1]: -1
         data[2]: -1
-        data[3]: 1
-      - op: 21
-        valueIndex: 25
-        data[0]: 17
-        data[1]: 2
-        data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 26
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 27
-        data[0]: 16
-        data[1]: 15
-        data[2]: -1
-        data[3]: 1
+        data[3]: 0
       - op: 1
         valueIndex: 28
         data[0]: -1
         data[1]: -1
         data[2]: -1
         data[3]: 1
-      - op: 23
+      - op: 37
         valueIndex: 29
-        data[0]: 18
-        data[1]: 14
+        data[0]: 2
+        data[1]: 0
         data[2]: -1
-        data[3]: 1
+        data[3]: -1
       - op: 1
-        valueIndex: 30
+        valueIndex: 32
+        data[0]: -1
+        data[1]: -1
+        data[2]: -1
+        data[3]: 2
+      - op: 1
+        valueIndex: 34
         data[0]: -1
         data[1]: -1
         data[2]: -1
         data[3]: 1
-      - op: 27
-        valueIndex: 31
-        data[0]: 25
-        data[1]: 24
-        data[2]: -1
-        data[3]: 1
-      - op: 24
-        valueIndex: 32
-        data[0]: 19
-        data[1]: 22
-        data[2]: -1
-        data[3]: 1
-      - op: 25
-        valueIndex: 33
-        data[0]: 23
-        data[1]: 20
-        data[2]: -1
-        data[3]: 1
-      - op: 21
-        valueIndex: 34
-        data[0]: 21
-        data[1]: 2
-        data[2]: -1
-        data[3]: 1
-      - op: 26
+      - op: 1
         valueIndex: 35
-        data[0]: 29
-        data[1]: 15
+        data[0]: -1
+        data[1]: -1
         data[2]: -1
         data[3]: 1
       - op: 1
@@ -1296,124 +1076,58 @@ VisualEffectResource:
         data[1]: -1
         data[2]: -1
         data[3]: 1
-      - op: 22
+      - op: 35
         valueIndex: 38
-        data[0]: 20
-        data[1]: 27
+        data[0]: 2
+        data[1]: 1
         data[2]: -1
-        data[3]: 1
+        data[3]: -1
       - op: 1
-        valueIndex: 39
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 40
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 22
         valueIndex: 41
-        data[0]: 28
-        data[1]: 26
+        data[0]: -1
+        data[1]: -1
         data[2]: -1
         data[3]: 1
-      - op: 1
+      - op: 6
         valueIndex: 42
         data[0]: -1
         data[1]: -1
         data[2]: -1
-        data[3]: 1
+        data[3]: -1
       - op: 1
         valueIndex: 43
         data[0]: -1
         data[1]: -1
         data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 44
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
+        data[3]: 2
       - op: 1
         valueIndex: 45
         data[0]: -1
         data[1]: -1
         data[2]: -1
-        data[3]: 1
-      - op: 21
-        valueIndex: 46
-        data[0]: 30
-        data[1]: 2
-        data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 47
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 48
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
+        data[3]: 4
       - op: 1
         valueIndex: 49
         data[0]: -1
         data[1]: -1
         data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 50
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 51
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 21
-        valueIndex: 52
-        data[0]: 39
-        data[1]: 17
-        data[2]: -1
-        data[3]: 1
+        data[3]: 4
       - op: 1
         valueIndex: 53
         data[0]: -1
         data[1]: -1
         data[2]: -1
-        data[3]: 1
-      - op: 21
-        valueIndex: 54
-        data[0]: 33
-        data[1]: 7
-        data[2]: -1
-        data[3]: 1
-      - op: 21
-        valueIndex: 55
-        data[0]: 41
-        data[1]: 42
-        data[2]: -1
-        data[3]: 1
-      - op: 26
+        data[3]: 3
+      - op: 1
         valueIndex: 56
-        data[0]: 44
-        data[1]: 15
+        data[0]: -1
+        data[1]: -1
         data[2]: -1
         data[3]: 1
-      - op: 26
+      - op: 1
         valueIndex: 57
-        data[0]: 32
-        data[1]: 15
+        data[0]: -1
+        data[1]: -1
         data[2]: -1
         data[3]: 1
       - op: 1
@@ -1440,15 +1154,15 @@ VisualEffectResource:
         data[1]: -1
         data[2]: -1
         data[3]: 1
-      - op: 26
+      - op: 1
         valueIndex: 62
-        data[0]: 40
-        data[1]: 0
+        data[0]: -1
+        data[1]: -1
         data[2]: -1
         data[3]: 1
-      - op: 16
+      - op: 1
         valueIndex: 63
-        data[0]: 37
+        data[0]: -1
         data[1]: -1
         data[2]: -1
         data[3]: 1
@@ -1457,381 +1171,21 @@ VisualEffectResource:
         data[0]: -1
         data[1]: -1
         data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 65
-        data[0]: 36
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 66
-        data[0]: 35
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 67
-        data[0]: 43
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
-      - op: 3
-        valueIndex: 68
-        data[0]: 34
-        data[1]: 34
-        data[2]: 34
-        data[3]: -1
-      - op: 25
-        valueIndex: 71
-        data[0]: 31
-        data[1]: 20
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 72
-        data[0]: 38
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
+        data[3]: 3
       - op: 1
-        valueIndex: 73
+        valueIndex: 67
         data[0]: -1
         data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 3
-        valueIndex: 74
-        data[0]: 60
-        data[1]: 57
-        data[2]: 56
-        data[3]: -1
-      - op: 26
-        valueIndex: 77
-        data[0]: 54
-        data[1]: 15
-        data[2]: -1
-        data[3]: 1
-      - op: 22
-        valueIndex: 78
-        data[0]: 67
-        data[1]: 50
-        data[2]: -1
-        data[3]: 1
-      - op: 21
-        valueIndex: 79
-        data[0]: 8
-        data[1]: 64
         data[2]: -1
         data[3]: 3
-      - op: 11
-        valueIndex: 82
-        data[0]: 59
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 12
-        valueIndex: 83
-        data[0]: 59
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 22
-        valueIndex: 84
-        data[0]: 49
-        data[1]: 51
-        data[2]: -1
-        data[3]: 1
       - op: 1
-        valueIndex: 85
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 86
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 87
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 88
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 89
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 90
-        data[0]: 55
-        data[1]: 15
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 91
-        data[0]: 2
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
-      - op: 22
-        valueIndex: 92
-        data[0]: 67
-        data[1]: 48
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 93
-        data[0]: 58
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 94
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 95
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 96
-        data[0]: 61
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 97
-        data[0]: 62
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 98
-        data[0]: 63
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 99
-        data[0]: 65
-        data[1]: 15
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 100
-        data[0]: 53
-        data[1]: 15
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 101
-        data[0]: 52
-        data[1]: 15
-        data[2]: -1
-        data[3]: 1
-      - op: 9
-        valueIndex: 102
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: -1
-      - op: 3
-        valueIndex: 118
-        data[0]: 47
-        data[1]: 46
-        data[2]: 45
-        data[3]: -1
-      - op: 1
-        valueIndex: 121
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 13
-      - op: 26
-        valueIndex: 122
-        data[0]: 66
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
-      - op: 37
-        valueIndex: 123
-        data[0]: 92
-        data[1]: 71
-        data[2]: -1
-        data[3]: -1
-      - op: 25
-        valueIndex: 126
-        data[0]: 80
-        data[1]: 20
-        data[2]: -1
-        data[3]: 1
-      - op: 1
-        valueIndex: 127
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 44
-        valueIndex: 128
-        data[0]: 94
-        data[1]: -1
-        data[2]: -1
-        data[3]: 0
-      - op: 26
-        valueIndex: 132
-        data[0]: 85
-        data[1]: 15
-        data[2]: -1
-        data[3]: 1
-      - op: 4
-        valueIndex: 133
-        data[0]: 74
-        data[1]: 82
-        data[2]: 70
-        data[3]: 15
-      - op: 22
-        valueIndex: 137
-        data[0]: 19
-        data[1]: 37
-        data[2]: -1
-        data[3]: 1
-      - op: 3
-        valueIndex: 138
-        data[0]: 84
-        data[1]: 75
-        data[2]: 76
-        data[3]: -1
-      - op: 3
-        valueIndex: 141
-        data[0]: 77
-        data[1]: 78
-        data[2]: 79
-        data[3]: -1
-      - op: 26
-        valueIndex: 144
-        data[0]: 81
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 145
-        data[0]: 83
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 146
-        data[0]: 95
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 147
-        data[0]: 86
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 148
-        data[0]: 87
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 149
-        data[0]: 88
-        data[1]: 0
-        data[2]: -1
-        data[3]: 1
-      - op: 25
-        valueIndex: 150
-        data[0]: 89
-        data[1]: 20
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 151
-        data[0]: 90
-        data[1]: 15
-        data[2]: -1
-        data[3]: 1
-      - op: 26
-        valueIndex: 152
-        data[0]: 91
-        data[1]: 15
-        data[2]: -1
-        data[3]: 1
-      - op: 36
-        valueIndex: 153
-        data[0]: 92
-        data[1]: 93
-        data[2]: -1
-        data[3]: -1
-      - op: 4
-        valueIndex: 156
-        data[0]: 2
-        data[1]: 6
-        data[2]: 7
-        data[3]: 15
-      - op: 1
-        valueIndex: 160
+        valueIndex: 70
         data[0]: -1
         data[1]: -1
         data[2]: -1
         data[3]: 7
       - op: 1
-        valueIndex: 162
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 2
-      - op: 6
-        valueIndex: 164
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: -1
-      - op: 1
-        valueIndex: 165
-        data[0]: -1
-        data[1]: -1
-        data[2]: -1
-        data[3]: 1
-      - op: 35
-        valueIndex: 166
-        data[0]: 92
-        data[1]: 68
-        data[2]: -1
-        data[3]: -1
-      - op: 25
-        valueIndex: 169
-        data[0]: 69
-        data[1]: 33
-        data[2]: -1
-        data[3]: 1
-      - op: 2
-        valueIndex: 170
-        data[0]: 72
-        data[1]: 73
-        data[2]: -1
-        data[3]: -1
-      - op: 1
-        valueIndex: 172
+        valueIndex: 72
         data[0]: -1
         data[1]: -1
         data[2]: -1
@@ -1841,96 +1195,60 @@ VisualEffectResource:
     m_PropertySheet:
       m_Float:
         m_Array:
-        - m_ExpressionIndex: 0
-          m_Value: 9.9999994e-11
-        - m_ExpressionIndex: 1
-          m_Value: 0.38125
-        - m_ExpressionIndex: 3
-          m_Value: 0
         - m_ExpressionIndex: 4
-          m_Value: 0
-        - m_ExpressionIndex: 5
-          m_Value: 1
-        - m_ExpressionIndex: 15
-          m_Value: 0
-        - m_ExpressionIndex: 16
-          m_Value: 0.2
-        - m_ExpressionIndex: 19
-          m_Value: 0.3
-        - m_ExpressionIndex: 20
-          m_Value: 1
-        - m_ExpressionIndex: 22
-          m_Value: 0.2
-        - m_ExpressionIndex: 24
-          m_Value: 0.5
-        - m_ExpressionIndex: 26
-          m_Value: 0.2
-        - m_ExpressionIndex: 32
-          m_Value: 0.728
-        - m_ExpressionIndex: 33
-          m_Value: 6.2831855
-        - m_ExpressionIndex: 35
-          m_Value: 0.01
-        - m_ExpressionIndex: 36
-          m_Value: 9.9829
-        - m_ExpressionIndex: 38
-          m_Value: 998.29
-        - m_ExpressionIndex: 39
-          m_Value: 3.1415927
-        - m_ExpressionIndex: 40
-          m_Value: 7.625
-        - m_ExpressionIndex: 41
-          m_Value: 201.06194
-        - m_ExpressionIndex: 43
-          m_Value: 0.3
-        - m_ExpressionIndex: 44
-          m_Value: 0
-        - m_ExpressionIndex: 45
-          m_Value: 0
-        - m_ExpressionIndex: 46
-          m_Value: -9.81
-        - m_ExpressionIndex: 47
-          m_Value: 0
-        - m_ExpressionIndex: 49
-          m_Value: 315
-        - m_ExpressionIndex: 54
-          m_Value: 6.2831855
-        - m_ExpressionIndex: 55
-          m_Value: 1
-        - m_ExpressionIndex: 56
-          m_Value: 0
-        - m_ExpressionIndex: 57
-          m_Value: -0.24813068
-        - m_ExpressionIndex: 60
-          m_Value: -0.017374076
-        - m_ExpressionIndex: 67
-          m_Value: 15
-        - m_ExpressionIndex: 75
-          m_Value: -0.25
-        - m_ExpressionIndex: 76
-          m_Value: 0
-        - m_ExpressionIndex: 77
-          m_Value: 3
-        - m_ExpressionIndex: 78
-          m_Value: 6.5
-        - m_ExpressionIndex: 79
-          m_Value: 3
-        - m_ExpressionIndex: 84
-          m_Value: 0
-        - m_ExpressionIndex: 85
           m_Value: 2000
-        - m_ExpressionIndex: 98
+        - m_ExpressionIndex: 6
           m_Value: 5
-        - m_ExpressionIndex: 119
+        - m_ExpressionIndex: 9
+          m_Value: 0.59999996
+        - m_ExpressionIndex: 10
+          m_Value: 1
+        - m_ExpressionIndex: 11
+          m_Value: 6.2831855
+        - m_ExpressionIndex: 12
+          m_Value: 0.2
+        - m_ExpressionIndex: 14
           m_Value: 0.8
+        - m_ExpressionIndex: 20
+          m_Value: 0
+        - m_ExpressionIndex: 21
+          m_Value: 0.728
+        - m_ExpressionIndex: 22
+          m_Value: 0.3
+        - m_ExpressionIndex: 23
+          m_Value: 0.01
+        - m_ExpressionIndex: 24
+          m_Value: 9.9829
+        - m_ExpressionIndex: 25
+          m_Value: 998.29
+        - m_ExpressionIndex: 26
+          m_Value: 7.625
+        - m_ExpressionIndex: 27
+          m_Value: 0.38125
       m_Vector2f:
         m_Array:
-        - m_ExpressionIndex: 117
+        - m_ExpressionIndex: 8
+          m_Value: {x: 0.44721365, y: 0.8944272}
+        - m_ExpressionIndex: 16
           m_Value: {x: 0, y: 0}
       m_Vector3f:
-        m_Array: []
+        m_Array:
+        - m_ExpressionIndex: 0
+          m_Value: {x: 0, y: 1, z: 0}
+        - m_ExpressionIndex: 1
+          m_Value: {x: -0.017374076, y: -0.24813068, z: 0}
+        - m_ExpressionIndex: 19
+          m_Value: {x: 0, y: -9.81, z: 0}
+        - m_ExpressionIndex: 28
+          m_Value: {x: 3, y: 6.5, z: 3}
+        - m_ExpressionIndex: 29
+          m_Value: {x: 0, y: -0.25, z: 0}
       m_Vector4f:
-        m_Array: []
+        m_Array:
+        - m_ExpressionIndex: 17
+          m_Value: {x: 9206.448, y: 1554.8279, z: 43.08061, w: 0}
+        - m_ExpressionIndex: 18
+          m_Value: {x: 0.38125, y: 0.14535156, z: 0.05541528, w: 0}
       m_Uint:
         m_Array: []
       m_Int:
@@ -1939,7 +1257,7 @@ VisualEffectResource:
         m_Array: []
       m_AnimationCurve:
         m_Array:
-        - m_ExpressionIndex: 94
+        - m_ExpressionIndex: 3
           m_Value:
             serializedVersion: 2
             m_Curve:
@@ -1995,16 +1313,16 @@ VisualEffectResource:
         m_Array: []
       m_NamedObject:
         m_Array:
-        - m_ExpressionIndex: 116
+        - m_ExpressionIndex: 30
           m_Value: {fileID: 0}
-        - m_ExpressionIndex: 123
+        - m_ExpressionIndex: 31
           m_Value: {fileID: 2800000, guid: 276d9e395ae18fe40a9b4988549f2349, type: 3}
       m_Bool:
         m_Array: []
     m_ExposedExpressions: []
     m_Buffers:
     - type: 1
-      size: 65488
+      size: 57296
       layout:
       - name: lifetime
         type: 1
@@ -2054,28 +1372,22 @@ VisualEffectResource:
           bucket: 45056
           structure: 4
           element: 0
-      - name: vorticityTurbulence
-        type: 4
-        offset:
-          bucket: 53248
-          structure: 4
-          element: 0
       - name: alive
         type: 17
         offset:
-          bucket: 61440
+          bucket: 53248
           structure: 1
           element: 0
       - name: age
         type: 1
         offset:
-          bucket: 63488
+          bucket: 55296
           structure: 1
           element: 0
       capacity: 2000
       stride: 4
     - type: 1
-      size: 65536
+      size: 57344
       layout:
       - name: lifetime
         type: 1
@@ -2125,22 +1437,16 @@ VisualEffectResource:
           bucket: 45056
           structure: 4
           element: 0
-      - name: vorticityTurbulence
-        type: 4
-        offset:
-          bucket: 53248
-          structure: 4
-          element: 0
       - name: alive
         type: 17
         offset:
-          bucket: 61440
+          bucket: 53248
           structure: 1
           element: 0
       - name: age
         type: 1
         offset:
-          bucket: 63488
+          bucket: 55296
           structure: 1
           element: 0
       capacity: 2048
@@ -2234,7 +1540,7 @@ VisualEffectResource:
       buffers: []
       values:
       - nameId: Rate
-        index: 100
+        index: 4
       params: []
       processor: {fileID: 0}
       shaderSourceIndex: -1
@@ -2261,9 +1567,9 @@ VisualEffectResource:
       index: 7
     values:
     - nameId: bounds_center
-      index: 103
+      index: 29
     - nameId: bounds_size
-      index: 104
+      index: 28
     tasks:
     - type: 536870912
       buffers:
@@ -2276,33 +1582,15 @@ VisualEffectResource:
       - nameId: sourceAttributeBuffer
         index: 2
       values:
-      - nameId: Lifetime_a
-        index: 119
       - nameId: Cone_center_b
-        index: 120
-      - nameId: Cone_radius0_b
-        index: 22
-      - nameId: Cone_radius1_b
-        index: 19
-      - nameId: Cone_height_b
-        index: 26
-      - nameId: Cone_arc_b
-        index: 121
-      - nameId: fullConeHeight_b
-        index: 102
-      - nameId: sincosSlope_b
-        index: 122
+        index: 13
       - nameId: Direction_c
-        index: 96
-      - nameId: Speed_c
-        index: 98
-      - nameId: DirectionBlend_c
-        index: 97
+        index: 7
       params:
       - nameId: bounds_center
-        index: 103
+        index: 29
       - nameId: bounds_size
-        index: 104
+        index: 28
       processor: {fileID: 0}
       shaderSourceIndex: 7
     - type: 805306368
@@ -2314,32 +1602,8 @@ VisualEffectResource:
       - nameId: indirectBuffer
         index: 5
       values:
-      - nameId: solverData_Fluid_SmoothingDistance_a
-        index: 105
-      - nameId: solverData_Fluid_ParticleMass_a
-        index: 106
-      - nameId: solverData_Fluid_Density_a
-        index: 107
-      - nameId: solverData_Fluid_MinimumDensity_a
-        index: 108
-      - nameId: solverData_Fluid_GasConstant_a
-        index: 109
-      - nameId: solverData_Fluid_Viscosity_a
-        index: 110
-      - nameId: solverData_Fluid_TurbulenceProbability_a
-        index: 111
-      - nameId: solverData_Fluid_SurfaceTension_a
-        index: 112
-      - nameId: solverData_Fluid_BuoyancyCoefficient_a
-        index: 113
-      - nameId: solverData_Gravity_a
-        index: 114
-      - nameId: solverData_KernelSize_a
-        index: 115
-      - nameId: solverData_KernelFactors_a
-        index: 101
       - nameId: solverData_Tex_a
-        index: 116
+        index: 30
       params: []
       processor: {fileID: 0}
       shaderSourceIndex: 0
@@ -2351,31 +1615,7 @@ VisualEffectResource:
         index: 3
       - nameId: indirectBuffer
         index: 5
-      values:
-      - nameId: solverData_Fluid_SmoothingDistance_a
-        index: 105
-      - nameId: solverData_Fluid_ParticleMass_a
-        index: 106
-      - nameId: solverData_Fluid_Density_a
-        index: 107
-      - nameId: solverData_Fluid_MinimumDensity_a
-        index: 108
-      - nameId: solverData_Fluid_GasConstant_a
-        index: 109
-      - nameId: solverData_Fluid_Viscosity_a
-        index: 110
-      - nameId: solverData_Fluid_TurbulenceProbability_a
-        index: 111
-      - nameId: solverData_Fluid_SurfaceTension_a
-        index: 112
-      - nameId: solverData_Fluid_BuoyancyCoefficient_a
-        index: 113
-      - nameId: solverData_Gravity_a
-        index: 114
-      - nameId: solverData_KernelSize_a
-        index: 115
-      - nameId: solverData_KernelFactors_a
-        index: 101
+      values: []
       params: []
       processor: {fileID: 0}
       shaderSourceIndex: 1
@@ -2387,31 +1627,7 @@ VisualEffectResource:
         index: 3
       - nameId: indirectBuffer
         index: 5
-      values:
-      - nameId: solverData_Fluid_SmoothingDistance_a
-        index: 105
-      - nameId: solverData_Fluid_ParticleMass_a
-        index: 106
-      - nameId: solverData_Fluid_Density_a
-        index: 107
-      - nameId: solverData_Fluid_MinimumDensity_a
-        index: 108
-      - nameId: solverData_Fluid_GasConstant_a
-        index: 109
-      - nameId: solverData_Fluid_Viscosity_a
-        index: 110
-      - nameId: solverData_Fluid_TurbulenceProbability_a
-        index: 111
-      - nameId: solverData_Fluid_SurfaceTension_a
-        index: 112
-      - nameId: solverData_Fluid_BuoyancyCoefficient_a
-        index: 113
-      - nameId: solverData_Gravity_a
-        index: 114
-      - nameId: solverData_KernelSize_a
-        index: 115
-      - nameId: solverData_KernelFactors_a
-        index: 101
+      values: []
       params: []
       processor: {fileID: 0}
       shaderSourceIndex: 2
@@ -2423,31 +1639,7 @@ VisualEffectResource:
         index: 3
       - nameId: indirectBuffer
         index: 5
-      values:
-      - nameId: solverData_Fluid_SmoothingDistance_a
-        index: 105
-      - nameId: solverData_Fluid_ParticleMass_a
-        index: 106
-      - nameId: solverData_Fluid_Density_a
-        index: 107
-      - nameId: solverData_Fluid_MinimumDensity_a
-        index: 108
-      - nameId: solverData_Fluid_GasConstant_a
-        index: 109
-      - nameId: solverData_Fluid_Viscosity_a
-        index: 110
-      - nameId: solverData_Fluid_TurbulenceProbability_a
-        index: 111
-      - nameId: solverData_Fluid_SurfaceTension_a
-        index: 112
-      - nameId: solverData_Fluid_BuoyancyCoefficient_a
-        index: 113
-      - nameId: solverData_Gravity_a
-        index: 114
-      - nameId: solverData_KernelSize_a
-        index: 115
-      - nameId: solverData_KernelFactors_a
-        index: 101
+      values: []
       params: []
       processor: {fileID: 0}
       shaderSourceIndex: 3
@@ -2459,31 +1651,7 @@ VisualEffectResource:
         index: 3
       - nameId: indirectBuffer
         index: 5
-      values:
-      - nameId: solverData_Fluid_SmoothingDistance_a
-        index: 105
-      - nameId: solverData_Fluid_ParticleMass_a
-        index: 106
-      - nameId: solverData_Fluid_Density_a
-        index: 107
-      - nameId: solverData_Fluid_MinimumDensity_a
-        index: 108
-      - nameId: solverData_Fluid_GasConstant_a
-        index: 109
-      - nameId: solverData_Fluid_Viscosity_a
-        index: 110
-      - nameId: solverData_Fluid_TurbulenceProbability_a
-        index: 111
-      - nameId: solverData_Fluid_SurfaceTension_a
-        index: 112
-      - nameId: solverData_Fluid_BuoyancyCoefficient_a
-        index: 113
-      - nameId: solverData_Gravity_a
-        index: 114
-      - nameId: solverData_KernelSize_a
-        index: 115
-      - nameId: solverData_KernelFactors_a
-        index: 101
+      values: []
       params: []
       processor: {fileID: 0}
       shaderSourceIndex: 4
@@ -2495,31 +1663,7 @@ VisualEffectResource:
         index: 3
       - nameId: indirectBuffer
         index: 5
-      values:
-      - nameId: solverData_Fluid_SmoothingDistance_a
-        index: 105
-      - nameId: solverData_Fluid_ParticleMass_a
-        index: 106
-      - nameId: solverData_Fluid_Density_a
-        index: 107
-      - nameId: solverData_Fluid_MinimumDensity_a
-        index: 108
-      - nameId: solverData_Fluid_GasConstant_a
-        index: 109
-      - nameId: solverData_Fluid_Viscosity_a
-        index: 110
-      - nameId: solverData_Fluid_TurbulenceProbability_a
-        index: 111
-      - nameId: solverData_Fluid_SurfaceTension_a
-        index: 112
-      - nameId: solverData_Fluid_BuoyancyCoefficient_a
-        index: 113
-      - nameId: solverData_Gravity_a
-        index: 114
-      - nameId: solverData_KernelSize_a
-        index: 115
-      - nameId: solverData_KernelFactors_a
-        index: 101
+      values: []
       params: []
       processor: {fileID: 0}
       shaderSourceIndex: 5
@@ -2532,32 +1676,8 @@ VisualEffectResource:
       - nameId: indirectBuffer
         index: 5
       values:
-      - nameId: solverData_Fluid_SmoothingDistance_a
-        index: 105
-      - nameId: solverData_Fluid_ParticleMass_a
-        index: 106
-      - nameId: solverData_Fluid_Density_a
-        index: 107
-      - nameId: solverData_Fluid_MinimumDensity_a
-        index: 108
-      - nameId: solverData_Fluid_GasConstant_a
-        index: 109
-      - nameId: solverData_Fluid_Viscosity_a
-        index: 110
-      - nameId: solverData_Fluid_TurbulenceProbability_a
-        index: 111
-      - nameId: solverData_Fluid_SurfaceTension_a
-        index: 112
-      - nameId: solverData_Fluid_BuoyancyCoefficient_a
-        index: 113
-      - nameId: solverData_Gravity_a
-        index: 114
-      - nameId: solverData_KernelSize_a
-        index: 115
-      - nameId: solverData_KernelFactors_a
-        index: 101
       - nameId: dt_a
-        index: 118
+        index: 15
       params: []
       processor: {fileID: 0}
       shaderSourceIndex: 6
@@ -2585,9 +1705,9 @@ VisualEffectResource:
         index: 4
       values:
       - nameId: Alpha_b
-        index: 99
+        index: 5
       - nameId: mainTexture
-        index: 123
+        index: 31
       params:
       - nameId: sortPriority
         index: 0
@@ -2664,7 +1784,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Parent: {fileID: 0}
   m_Children:
-  - {fileID: 8926484042661618133}
+  - {fileID: 8926484042661618268}
   - {fileID: 8926484042661618143}
   - {fileID: 8926484042661618148}
   - {fileID: 8926484042661618153}
@@ -2680,8 +1800,8 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: Thinksquirrel.FluvioFX.Editor.SolverData, Thinksquirrel.FluvioFX.Editor,
           Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"Fluid":{"SmoothingDistance":0.3812499940395355,"ParticleMass":7.625,"Density":998.2899780273438,"MinimumDensity":499.1449890136719,"GasConstant":0.009999999776482582,"Viscosity":1.0,"TurbulenceProbability":0.0,"SurfaceTension":0.7279999852180481,"BuoyancyCoefficient":0.0},"Gravity":{"vector":{"x":0.0,"y":0.0,"z":0.0}},"KernelSize":{"x":0.3812499940395355,"y":0.1453515589237213,"z":0.055415280163288119,"w":1.0},"KernelFactors":{"x":9206.4482421875,"y":1554.8280029296875,"z":43.08060836791992,"w":0.0},"Tex":{"instanceID":0},"TexSize":{"x":0.0,"y":0.0}}'
-    m_Space: 0
+      m_SerializableObject: '{"Fluid":{"SmoothingDistance":0.3812499940395355,"ParticleMass":7.625,"Density":998.2899780273438,"MinimumDensity":499.1449890136719,"GasConstant":0.009999999776482582,"Viscosity":1.0,"SurfaceTension":0.7279999852180481,"BuoyancyCoefficient":0.0},"Gravity":{"vector":{"x":0.0,"y":0.0,"z":0.0}},"KernelSize":{"x":0.3812499940395355,"y":0.1453515589237213,"z":0.055415280163288119,"w":1.0},"KernelFactors":{"x":9206.4482421875,"y":1554.8280029296875,"z":43.08060836791992,"w":0.0},"Tex":{"instanceID":0},"TexSize":{"x":0.0,"y":0.0}}'
+    m_Space: 1
   m_Property:
     name: solverData
     m_serializedType:
@@ -2691,465 +1811,6 @@ MonoBehaviour:
   m_Direction: 0
   m_LinkedSlots:
   - {fileID: 8926484042661618238}
---- !u!114 &8926484042661618133
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1b605c022ee79394a8a776c0869b3f9a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618132}
-  m_Children:
-  - {fileID: 8926484042661618134}
-  - {fileID: 8926484042661618135}
-  - {fileID: 8926484042661618136}
-  - {fileID: 8926484042661618137}
-  - {fileID: 8926484042661618138}
-  - {fileID: 8926484042661618139}
-  - {fileID: 8926484042661618140}
-  - {fileID: 8926484042661618141}
-  - {fileID: 8926484042661618142}
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618132}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: Fluid
-    m_serializedType:
-      m_SerializableType: Thinksquirrel.FluvioFX.Editor.Fluid, Thinksquirrel.FluvioFX.Editor,
-        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-    attributes: []
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618134
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618133}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618132}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: SmoothingDistance
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the smoothing distance of fluid particles. This changes
-        the overall simulation resolution and greatly affects all other properties.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618135
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618133}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618132}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: ParticleMass
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the mass of each fluid particle.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618136
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618133}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618132}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: Density
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the overall density of the fluid.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618137
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618133}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618132}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: MinimumDensity
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the minimum density of any fluid particle. This can be used
-        to help stabilize a low-viscosity fluid.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618138
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618133}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618132}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: GasConstant
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the gas constant of the fluid, which in turn affects the
-        pressure forces applied to particles.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618139
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618133}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618132}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: Viscosity
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the artificial viscosity force of the fluid.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618140
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618133}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618132}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: TurbulenceProbability
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 0
-      m_Min: 0
-      m_Max: 1
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the turbulence probability of the fluid. The turbulence
-        probability is a threshold beyond which a particle may become turbulent. Turbulent
-        particles will not affect non-turbulent particles. Fluid particles are not
-        turbulent by default. Turbulent forces are typically applied through effectors,
-        using the Vorticity property.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618141
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618133}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618132}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: SurfaceTension
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 0
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the surface tension of the fluid (intended for liquids only).
-        FluvioFX uses a simplified surface tension model that is ideal for realtime
-        use.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618142
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618133}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618132}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: BuoyancyCoefficient
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 0
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the buoyancy coefficient of a fluid. This controls the buoyancy
-        force, which is a density-dependent force in the opposite direction of gravity.
-        This should be used when simulating gas like smoke or fire, or fluids that
-        are less dense than the surrounding material.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
 --- !u!114 &8926484042661618143
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4068,7 +2729,6 @@ MonoBehaviour:
   m_OutputSlots: []
   m_Disabled: 0
   SurfaceTension: 1
-  Turbulence: 1
   Gravity: 1
   BuoyancyForce: 1
 --- !u!114 &8926484042661618177
@@ -5511,470 +4171,10 @@ MonoBehaviour:
   m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_InputSlots:
-  - {fileID: 8926484042661618223}
+  - {fileID: 8926484042661618286}
   - {fileID: 8926484042661618233}
   m_OutputSlots:
   - {fileID: 8926484042661618238}
---- !u!114 &8926484042661618223
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1b605c022ee79394a8a776c0869b3f9a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 0}
-  m_Children:
-  - {fileID: 8926484042661618224}
-  - {fileID: 8926484042661618225}
-  - {fileID: 8926484042661618226}
-  - {fileID: 8926484042661618227}
-  - {fileID: 8926484042661618228}
-  - {fileID: 8926484042661618229}
-  - {fileID: 8926484042661618230}
-  - {fileID: 8926484042661618231}
-  - {fileID: 8926484042661618232}
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 0
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618223}
-  m_MasterData:
-    m_Owner: {fileID: 8926484042661618222}
-    m_Value:
-      m_Type:
-        m_SerializableType: Thinksquirrel.FluvioFX.Editor.Fluid, Thinksquirrel.FluvioFX.Editor,
-          Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"SmoothingDistance":0.3812499940395355,"ParticleMass":7.625,"Density":998.2899780273438,"MinimumDensity":9.98289966583252,"GasConstant":0.009999999776482582,"Viscosity":0.30000001192092898,"TurbulenceProbability":0.20000000298023225,"SurfaceTension":0.7279999852180481,"BuoyancyCoefficient":0.0}'
-    m_Space: 2147483647
-  m_Property:
-    name: Fluid
-    m_serializedType:
-      m_SerializableType: Thinksquirrel.FluvioFX.Editor.Fluid, Thinksquirrel.FluvioFX.Editor,
-        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-    attributes: []
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618224
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618223}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618223}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: SmoothingDistance
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the smoothing distance of fluid particles. This changes
-        the overall simulation resolution and greatly affects all other properties.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618225
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618223}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618223}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: ParticleMass
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the mass of each fluid particle.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618226
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618223}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618223}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: Density
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the overall density of the fluid.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618227
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618223}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618223}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: MinimumDensity
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the minimum density of any fluid particle. This can be used
-        to help stabilize a low-viscosity fluid.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618228
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618223}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618223}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: GasConstant
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the gas constant of the fluid, which in turn affects the
-        pressure forces applied to particles.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618229
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618223}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618223}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: Viscosity
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the artificial viscosity force of the fluid.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618230
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618223}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618223}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: TurbulenceProbability
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 0
-      m_Min: 0
-      m_Max: 1
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the turbulence probability of the fluid. The turbulence
-        probability is a threshold beyond which a particle may become turbulent. Turbulent
-        particles will not affect non-turbulent particles. Fluid particles are not
-        turbulent by default. Turbulent forces are typically applied through effectors,
-        using the Vorticity property.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618231
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618223}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618223}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: SurfaceTension
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 0
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the surface tension of the fluid (intended for liquids only).
-        FluvioFX uses a simplified surface tension model that is ideal for realtime
-        use.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
---- !u!114 &8926484042661618232
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618223}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618223}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: BuoyancyCoefficient
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 0
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the buoyancy coefficient of a fluid. This controls the buoyancy
-        force, which is a density-dependent force in the opposite direction of gravity.
-        This should be used when simulating gas like smoke or fire, or fluids that
-        are less dense than the surrounding material.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 0
-  m_LinkedSlots: []
 --- !u!114 &8926484042661618233
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6001,7 +4201,7 @@ MonoBehaviour:
         m_SerializableType: UnityEditor.VFX.Vector, Unity.VisualEffectGraph.Editor,
           Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
       m_SerializableObject: '{"vector":{"x":0.0,"y":-9.8100004196167,"z":0.0}}'
-    m_Space: 0
+    m_Space: 1
   m_Property:
     name: Gravity
     m_serializedType:
@@ -6165,7 +4365,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Parent: {fileID: 0}
   m_Children:
-  - {fileID: 8926484042661618239}
+  - {fileID: 8926484042661618277}
   - {fileID: 8926484042661618249}
   - {fileID: 8926484042661618254}
   - {fileID: 8926484042661618259}
@@ -6181,8 +4381,8 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: Thinksquirrel.FluvioFX.Editor.SolverData, Thinksquirrel.FluvioFX.Editor,
           Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"Fluid":{"SmoothingDistance":0.0,"ParticleMass":0.0,"Density":0.0,"MinimumDensity":0.0,"GasConstant":0.0,"Viscosity":0.0,"TurbulenceProbability":0.0,"SurfaceTension":0.0,"BuoyancyCoefficient":0.0},"Gravity":{"vector":{"x":0.0,"y":0.0,"z":0.0}},"KernelSize":{"x":0.0,"y":0.0,"z":0.0,"w":0.0},"KernelFactors":{"x":0.0,"y":0.0,"z":0.0,"w":0.0},"Tex":{"instanceID":0},"TexSize":{"x":0.0,"y":0.0}}'
-    m_Space: 0
+      m_SerializableObject: '{"Fluid":{"SmoothingDistance":0.0,"ParticleMass":0.0,"Density":0.0,"MinimumDensity":0.0,"GasConstant":0.0,"Viscosity":0.0,"SurfaceTension":0.0,"BuoyancyCoefficient":0.0},"Gravity":{"vector":{"x":0.0,"y":0.0,"z":0.0}},"KernelSize":{"x":0.0,"y":0.0,"z":0.0,"w":0.0},"KernelFactors":{"x":0.0,"y":0.0,"z":0.0,"w":0.0},"Tex":{"instanceID":0},"TexSize":{"x":0.0,"y":0.0}}'
+    m_Space: 1
   m_Property:
     name: SolverData
     m_serializedType:
@@ -6192,465 +4392,6 @@ MonoBehaviour:
   m_Direction: 1
   m_LinkedSlots:
   - {fileID: 8926484042661618132}
---- !u!114 &8926484042661618239
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1b605c022ee79394a8a776c0869b3f9a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618238}
-  m_Children:
-  - {fileID: 8926484042661618240}
-  - {fileID: 8926484042661618241}
-  - {fileID: 8926484042661618242}
-  - {fileID: 8926484042661618243}
-  - {fileID: 8926484042661618244}
-  - {fileID: 8926484042661618245}
-  - {fileID: 8926484042661618246}
-  - {fileID: 8926484042661618247}
-  - {fileID: 8926484042661618248}
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618238}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: Fluid
-    m_serializedType:
-      m_SerializableType: Thinksquirrel.FluvioFX.Editor.Fluid, Thinksquirrel.FluvioFX.Editor,
-        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-    attributes: []
-  m_Direction: 1
-  m_LinkedSlots: []
---- !u!114 &8926484042661618240
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618239}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618238}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: SmoothingDistance
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the smoothing distance of fluid particles. This changes
-        the overall simulation resolution and greatly affects all other properties.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 1
-  m_LinkedSlots: []
---- !u!114 &8926484042661618241
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618239}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618238}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: ParticleMass
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the mass of each fluid particle.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 1
-  m_LinkedSlots: []
---- !u!114 &8926484042661618242
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618239}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618238}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: Density
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the overall density of the fluid.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 1
-  m_LinkedSlots: []
---- !u!114 &8926484042661618243
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618239}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618238}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: MinimumDensity
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the minimum density of any fluid particle. This can be used
-        to help stabilize a low-viscosity fluid.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 1
-  m_LinkedSlots: []
---- !u!114 &8926484042661618244
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618239}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618238}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: GasConstant
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the gas constant of the fluid, which in turn affects the
-        pressure forces applied to particles.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 1
-  m_LinkedSlots: []
---- !u!114 &8926484042661618245
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618239}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618238}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: Viscosity
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 9.9999994e-11
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the artificial viscosity force of the fluid.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 1
-  m_LinkedSlots: []
---- !u!114 &8926484042661618246
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618239}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618238}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: TurbulenceProbability
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 0
-      m_Min: 0
-      m_Max: 1
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the turbulence probability of the fluid. The turbulence
-        probability is a threshold beyond which a particle may become turbulent. Turbulent
-        particles will not affect non-turbulent particles. Fluid particles are not
-        turbulent by default. Turbulent forces are typically applied through effectors,
-        using the Vorticity property.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 1
-  m_LinkedSlots: []
---- !u!114 &8926484042661618247
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618239}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618238}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: SurfaceTension
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 0
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the surface tension of the fluid (intended for liquids only).
-        FluvioFX uses a simplified surface tension model that is ideal for realtime
-        use.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 1
-  m_LinkedSlots: []
---- !u!114 &8926484042661618248
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Parent: {fileID: 8926484042661618239}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  m_MasterSlot: {fileID: 8926484042661618238}
-  m_MasterData:
-    m_Owner: {fileID: 0}
-    m_Value:
-      m_Type:
-        m_SerializableType: 
-      m_SerializableObject: 
-    m_Space: 2147483647
-  m_Property:
-    name: BuoyancyCoefficient
-    m_serializedType:
-      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
-        PublicKeyToken=b77a5c561934e089
-    attributes:
-    - m_Type: 1
-      m_Min: 0
-      m_Max: Infinity
-      m_Tooltip: 
-      m_Regex: 
-      m_RegexMaxLength: 0
-    - m_Type: 3
-      m_Min: -Infinity
-      m_Max: Infinity
-      m_Tooltip: Controls the buoyancy coefficient of a fluid. This controls the buoyancy
-        force, which is a density-dependent force in the opposite direction of gravity.
-        This should be used when simulating gas like smoke or fire, or fluids that
-        are less dense than the surrounding material.
-      m_Regex: 
-      m_RegexMaxLength: 0
-  m_Direction: 1
-  m_LinkedSlots: []
 --- !u!114 &8926484042661618249
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7297,4 +5038,1232 @@ MonoBehaviour:
         PublicKeyToken=b77a5c561934e089
     attributes: []
   m_Direction: 1
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b605c022ee79394a8a776c0869b3f9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618132}
+  m_Children:
+  - {fileID: 8926484042661618269}
+  - {fileID: 8926484042661618270}
+  - {fileID: 8926484042661618271}
+  - {fileID: 8926484042661618272}
+  - {fileID: 8926484042661618273}
+  - {fileID: 8926484042661618274}
+  - {fileID: 8926484042661618275}
+  - {fileID: 8926484042661618276}
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618132}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: Fluid
+    m_serializedType:
+      m_SerializableType: Thinksquirrel.FluvioFX.Editor.Fluid, Thinksquirrel.FluvioFX.Editor,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    attributes: []
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618269
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618268}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618132}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: SmoothingDistance
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the smoothing distance of fluid particles. This changes
+        the overall simulation resolution and greatly affects all other properties.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618270
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618268}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618132}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: ParticleMass
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the mass of each fluid particle.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618271
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618268}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618132}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: Density
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the overall density of the fluid.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618268}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618132}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: MinimumDensity
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the minimum density of any fluid particle. This can be used
+        to help stabilize a low-viscosity fluid.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618273
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618268}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618132}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: GasConstant
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the gas constant of the fluid, which in turn affects the
+        pressure forces applied to particles.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618274
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618268}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618132}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: Viscosity
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the artificial viscosity force of the fluid.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618275
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618268}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618132}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: SurfaceTension
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 0
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the surface tension of the fluid (intended for liquids only).
+        FluvioFX uses a simplified surface tension model that is ideal for realtime
+        use.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618276
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618268}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618132}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: BuoyancyCoefficient
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 0
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the buoyancy coefficient of a fluid. This controls the buoyancy
+        force, which is a density-dependent force in the opposite direction of gravity.
+        This should be used when simulating gas like smoke or fire, or fluids that
+        are less dense than the surrounding material.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618277
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b605c022ee79394a8a776c0869b3f9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618238}
+  m_Children:
+  - {fileID: 8926484042661618278}
+  - {fileID: 8926484042661618279}
+  - {fileID: 8926484042661618280}
+  - {fileID: 8926484042661618281}
+  - {fileID: 8926484042661618282}
+  - {fileID: 8926484042661618283}
+  - {fileID: 8926484042661618284}
+  - {fileID: 8926484042661618285}
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618238}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: Fluid
+    m_serializedType:
+      m_SerializableType: Thinksquirrel.FluvioFX.Editor.Fluid, Thinksquirrel.FluvioFX.Editor,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    attributes: []
+  m_Direction: 1
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618278
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618277}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618238}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: SmoothingDistance
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the smoothing distance of fluid particles. This changes
+        the overall simulation resolution and greatly affects all other properties.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 1
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618279
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618277}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618238}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: ParticleMass
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the mass of each fluid particle.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 1
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618280
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618277}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618238}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: Density
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the overall density of the fluid.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 1
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618277}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618238}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: MinimumDensity
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the minimum density of any fluid particle. This can be used
+        to help stabilize a low-viscosity fluid.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 1
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618277}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618238}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: GasConstant
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the gas constant of the fluid, which in turn affects the
+        pressure forces applied to particles.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 1
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618283
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618277}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618238}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: Viscosity
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the artificial viscosity force of the fluid.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 1
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618284
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618277}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618238}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: SurfaceTension
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 0
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the surface tension of the fluid (intended for liquids only).
+        FluvioFX uses a simplified surface tension model that is ideal for realtime
+        use.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 1
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618285
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618277}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618238}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: BuoyancyCoefficient
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 0
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the buoyancy coefficient of a fluid. This controls the buoyancy
+        force, which is a density-dependent force in the opposite direction of gravity.
+        This should be used when simulating gas like smoke or fire, or fluids that
+        are less dense than the surrounding material.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 1
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618286
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b605c022ee79394a8a776c0869b3f9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 0}
+  m_Children:
+  - {fileID: 8926484042661618287}
+  - {fileID: 8926484042661618288}
+  - {fileID: 8926484042661618289}
+  - {fileID: 8926484042661618290}
+  - {fileID: 8926484042661618291}
+  - {fileID: 8926484042661618292}
+  - {fileID: 8926484042661618293}
+  - {fileID: 8926484042661618294}
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618286}
+  m_MasterData:
+    m_Owner: {fileID: 8926484042661618222}
+    m_Value:
+      m_Type:
+        m_SerializableType: Thinksquirrel.FluvioFX.Editor.Fluid, Thinksquirrel.FluvioFX.Editor,
+          Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      m_SerializableObject: '{"SmoothingDistance":0.3812499940395355,"ParticleMass":7.625,"Density":998.2899780273438,"MinimumDensity":9.98289966583252,"GasConstant":0.009999999776482582,"Viscosity":0.30000001192092898,"SurfaceTension":0.7279999852180481,"BuoyancyCoefficient":0.0}'
+    m_Space: 2147483647
+  m_Property:
+    name: Fluid
+    m_serializedType:
+      m_SerializableType: Thinksquirrel.FluvioFX.Editor.Fluid, Thinksquirrel.FluvioFX.Editor,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    attributes: []
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618287
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618286}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618286}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: SmoothingDistance
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the smoothing distance of fluid particles. This changes
+        the overall simulation resolution and greatly affects all other properties.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618288
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618286}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618286}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: ParticleMass
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the mass of each fluid particle.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618289
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618286}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618286}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: Density
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the overall density of the fluid.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618286}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618286}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: MinimumDensity
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the minimum density of any fluid particle. This can be used
+        to help stabilize a low-viscosity fluid.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618291
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618286}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618286}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: GasConstant
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the gas constant of the fluid, which in turn affects the
+        pressure forces applied to particles.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618286}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618286}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: Viscosity
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 9.9999994e-11
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the artificial viscosity force of the fluid.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618293
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618286}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618286}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: SurfaceTension
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 0
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the surface tension of the fluid (intended for liquids only).
+        FluvioFX uses a simplified surface tension model that is ideal for realtime
+        use.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
+  m_LinkedSlots: []
+--- !u!114 &8926484042661618294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f780aa281814f9842a7c076d436932e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Parent: {fileID: 8926484042661618286}
+  m_Children: []
+  m_UIPosition: {x: 0, y: 0}
+  m_UICollapsed: 1
+  m_UISuperCollapsed: 0
+  m_MasterSlot: {fileID: 8926484042661618286}
+  m_MasterData:
+    m_Owner: {fileID: 0}
+    m_Value:
+      m_Type:
+        m_SerializableType: 
+      m_SerializableObject: 
+    m_Space: 2147483647
+  m_Property:
+    name: BuoyancyCoefficient
+    m_serializedType:
+      m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
+        PublicKeyToken=b77a5c561934e089
+    attributes:
+    - m_Type: 1
+      m_Min: 0
+      m_Max: Infinity
+      m_Tooltip: 
+      m_Regex: 
+      m_RegexMaxLength: 0
+    - m_Type: 3
+      m_Min: -Infinity
+      m_Max: Infinity
+      m_Tooltip: Controls the buoyancy coefficient of a fluid. This controls the buoyancy
+        force, which is a density-dependent force in the opposite direction of gravity.
+        This should be used when simulating gas like smoke or fire, or fluids that
+        are less dense than the surrounding material.
+      m_Regex: 
+      m_RegexMaxLength: 0
+  m_Direction: 0
   m_LinkedSlots: []

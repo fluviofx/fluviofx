@@ -30,7 +30,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Operators
         {
             var density = VFXOperatorUtility
                 .ExtractComponents(new VFXAttributeExpression(FluvioFXAttribute.DensityPressure))
-                .ToArray() [1];
+                .ToArray() [0];
 
             var range = VFXOperatorUtility.ExtractComponents(inputExpression[0]).ToArray();
 

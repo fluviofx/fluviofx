@@ -6,7 +6,6 @@
 // Simulation constants - these cannot be changed at this time
 #define FLUVIO_EPSILON 9.99999944e-11f // FluvioFXSettings.kEpsilon
 #define FLUVIO_MAX_SQR_VELOCITY_CHANGE 100.0f // FluvioFXSettings.kMaxSqrVelocityChange
-#define FLUVIO_TURBULENCE_CONSTANT 10.0f // FluvioFXSettings.kTurbulenceConstant
 
 inline float3 clamp_len(float3 v, float len)
 {
