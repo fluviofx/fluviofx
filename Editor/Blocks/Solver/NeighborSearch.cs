@@ -25,67 +25,52 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
             get
             {
                 yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
-                if (hasLifetime)
+                yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.ReadWrite);
+
+                foreach (var attr in FluvioFXAttribute.Neighbors)
                 {
-                    yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
+                    yield return new VFXAttributeInfo(attr, VFXAttributeMode.ReadWrite);
                 }
-                // yield return new VFXAttributeInfo(FluvioFXAttribute.GridIndex, VFXAttributeMode.Read);
-                // yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.Write);
             }
         }
 
-        public override string source =>
-            $@"
-#ifdef FLUVIO_INDEX_GRID
-// TODO: Grid structure/neighbor search is not optimized, due to VFX limitations.
-// At the moment, we are unable to easily pass custom buffers to the system,
-// and not all platforms support texture atomics, which would be required
-// for a true spatial partition
+        protected internal override SolverDataParameters solverDataParameters => SolverDataParameters.KernelSize;
 
-uint3 indexVector = GetGridIndexVector(position, solverData_KernelSize.x);
-int3 indexVectorOff;
-uint3 indexVectorOffset;
-uint currentGridIndex;
-uint nCount = 0;
-float3 candidatePosition, dist;
-float d;
-
-for (uint candidate = 0; candidate < nbMax; ++candidate)
+        public override string source => $@"{CheckAlive()}
+// Get location3
+int3 location3 = GetLocation3(position, solverData_KernelSize.x);
+int3 offset;
+float3 dist;
+uint location;
+uint n = 0;
+for (offset.x = -1; offset.x <= 1; ++offset.x)
 {{
-    if (index == candidate) continue;
-
-    {""/*FluvioFXAttribute.GetLoadAttributeCode(this, FluvioFXAttribute.GridIndex, "candidateGridIndex", "candidate")*/}
-    if (candidateGridIndex == 0) continue;
-
-    for (indexVectorOff.x = -1; indexVectorOff.x <= 1; indexVectorOff.x++)
+    for (offset.y = -1; offset.y <= 1; ++offset.y)
     {{
-        for (indexVectorOff.y = -1; indexVectorOff.y <= 1; indexVectorOff.y++)
+        for (offset.z = -1; offset.z <= 1; ++offset.z)
         {{
-            for (indexVectorOff.z = -1; indexVectorOff.z <= 1; indexVectorOff.z++)
+            location = GetLocation(location3 + offset, asuint(nbMax));
+
+            for (uint bucketIndex = 0; bucketIndex < FLUVIO_MAX_BUCKET_COUNT; ++bucketIndex)
             {{
-                indexVectorOffset = (uint3)(indexVector + indexVectorOff);
-                currentGridIndex = GetGridIndex(indexVectorOffset);
+                {LoadBucket("neighborIndex", "location", "bucketIndex")}
+                if (neighborIndex == 0) break;
 
-                // indices are +1 for GPU grids (0 = not alive)
-                if (candidateGridIndex - 1 == currentGridIndex)
+                neighborIndex--; // Get true neighbor index
+
+                if (index == neighborIndex) continue;
+
+                {Load(VFXAttribute.Position, "neighborPosition", "neighborIndex")}
+                dist = position - neighborPosition;
+
+                if (dot(dist, dist) < solverData_KernelSize.y)
                 {{
-                    {FluvioFXAttribute.GetLoadAttributeCode(
-                        this,
-                        VFXAttribute.Position,
-                        "candidatePosition",
-                        "candidate")}
-                    dist = position - candidatePosition;
-                    d = dot(dist, dist);
+                    {StoreNeighbor("neighborIndex", "index", "n++")}
 
-                    if (d < solverData_KernelSize.y)
+                    if (neighborCount >= FLUVIO_MAX_NEIGHBOR_COUNT)
                     {{
-                        SetNeighborIndex(solverData_Tex, solverData_TexSize, index, nCount++, candidate);
-
-                        if (nCount >= FLUVIO_MAX_NEIGHBORS)
-                        {{
-                            neighborCount = FLUVIO_MAX_NEIGHBORS;
-                            return;
-                        }}
+                        neighborCount = FLUVIO_MAX_NEIGHBOR_COUNT;
+                        return;
                     }}
                 }}
             }}
@@ -93,8 +78,7 @@ for (uint candidate = 0; candidate < nbMax; ++candidate)
     }}
 }}
 
-neighborCount = nCount;
-#endif
+neighborCount = n;
 ";
     }
 }

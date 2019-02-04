@@ -38,7 +38,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
         protected override IEnumerable<VFXPropertyWithValue> inputProperties =>
             FluvioFXCollisionUtility.GetInputProperties(this, base.inputProperties);
         public override IEnumerable<VFXAttributeInfo> attributes =>
-            FluvioFXCollisionUtility.GetAttributes(base.attributes);
+            FluvioFXCollisionUtility.GetAttributes(this, base.attributes);
 
         public override string source =>
             FluvioFXCollisionUtility.GetCollisionSource(

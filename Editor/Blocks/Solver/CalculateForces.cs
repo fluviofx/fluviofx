@@ -8,104 +8,104 @@ using UnityEngine;
 using UnityEngine.Experimental.VFX;
 
 namespace Thinksquirrel.FluvioFX.Editor.Blocks
+{
+    [VFXInfo(category = "FluvioFX/Solver")]
+    class CalculateForces : FluvioFXBlock
     {
-        [VFXInfo(category = "FluvioFX/Solver")]
-        class CalculateForces : FluvioFXBlock
+        [VFXSetting]
+        public bool SurfaceTension = true;
+        [VFXSetting]
+        public bool Gravity = true;
+        [VFXSetting]
+        public bool BuoyancyForce = true;
+
+        public override string name
+        {
+            get
             {
-                [VFXSetting]
-                public bool SurfaceTension = true;
-                [VFXSetting]
-                public bool Gravity = true;
-                [VFXSetting]
-                public bool BuoyancyForce = true;
+                return "Calculate Forces";
+            }
+        }
+        public override IEnumerable<VFXAttributeInfo> attributes
+        {
+            get
+            {
+                yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.Read);
+                yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
+                yield return new VFXAttributeInfo(VFXAttribute.Velocity, VFXAttributeMode.Read);
+                yield return new VFXAttributeInfo(VFXAttribute.Mass, VFXAttributeMode.Read);
+                yield return new VFXAttributeInfo(FluvioFXAttribute.DensityPressure, VFXAttributeMode.Read);
+                if (SurfaceTension)
+                {
+                    yield return new VFXAttributeInfo(FluvioFXAttribute.Normal, VFXAttributeMode.Read);
+                }
+                yield return new VFXAttributeInfo(FluvioFXAttribute.Force, VFXAttributeMode.ReadWrite);
+            }
+        }
 
-                public override string name
-                {
-                    get
-                    {
-                        return "Calculate Forces";
-                    }
-                }
-                public override IEnumerable<VFXAttributeInfo> attributes
-                {
-                    get
-                    {
-                        yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
-                        if (hasLifetime)
-                        {
-                            yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
-                        }
-                        yield return new VFXAttributeInfo(VFXAttribute.Velocity, VFXAttributeMode.Read);
-                        yield return new VFXAttributeInfo(VFXAttribute.Mass, VFXAttributeMode.Read);
-                        // yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.Read);
-                        yield return new VFXAttributeInfo(FluvioFXAttribute.DensityPressure, VFXAttributeMode.Read);
-                        if (SurfaceTension)
-                        {
-                            yield return new VFXAttributeInfo(FluvioFXAttribute.Normal, VFXAttributeMode.Read);
-                        }
-                        yield return new VFXAttributeInfo(FluvioFXAttribute.Force, VFXAttributeMode.ReadWrite);
-                    }
-                }
+        protected override IEnumerable<string> filteredOutSettings
+        {
+            get
+            {
+                if (!Gravity)
+                    yield return nameof(BuoyancyForce);
+            }
+        }
 
-                private IEnumerable<string> defines
+        protected internal override SolverDataParameters solverDataParameters
+        {
+            get
+            {
+                var solverDataParams =
+                    SolverDataParameters.Fluid_Viscosity |
+                    SolverDataParameters.KernelFactors |
+                    SolverDataParameters.KernelSize;
+
+                if (SurfaceTension)
                 {
-                    get
-                    {
-                        if (SurfaceTension) yield return "#define FLUVIO_SURFACE_TENSION_ENABLED 1";
-                        if (Gravity)
-                        {
-                            yield return "#define FLUVIO_GRAVITY_ENABLED 1";
-                            if (BuoyancyForce) yield return "#define FLUVIO_BUOYANCY_FORCE_ENABLED 1";
-                        }
-                    }
+                    solverDataParams |= SolverDataParameters.Fluid_SurfaceTension;
                 }
-                protected override IEnumerable<string> filteredOutSettings
+                if (Gravity)
                 {
-                    get
+                    solverDataParams |= SolverDataParameters.Gravity;
+
+                    if (BuoyancyForce)
                     {
-                        if (!Gravity)
-                            yield return nameof(BuoyancyForce);
+                        solverDataParams |=
+                            SolverDataParameters.Fluid_Density |
+                            SolverDataParameters.Fluid_BuoyancyCoefficient;
                     }
                 }
 
-                public override string source => $@"
-{string.Join("\n", defines)}
+                return solverDataParams;
+            }
+        }
+
+        public override string source => $@"{CheckAlive()}
 float3 dist, f, invNeighborDensity;
-float scalar;
-
-#ifdef FLUVIO_INDEX_GRID
-uint neighborIndex;
+float lenSq, len, len3, diffSq, diff, scalar;
 for (uint j = 0; j < neighborCount; ++j)
 {{
-    neighborIndex = GetNeighborIndex(solverData_Tex, solverData_TexSize, index, j);
-#else
-float distLenSq;
-for (uint neighborIndex = 0; neighborIndex < nbMax; ++neighborIndex)
-{{
-    if (index == neighborIndex) continue;
-    {(hasLifetime ? FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Alive, "neighborAlive", "neighborIndex") : "")}
-    {(hasLifetime ? "if (!neighborAlive) continue;" : "")}
-#endif
+    {LoadNeighbor("neighborIndex", "index", "j")}
 
-    {FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Position, "neighborPosition", "neighborIndex")}
-    {FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Mass, "neighborMass", "neighborIndex")}
-    {FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Velocity, "neighborVelocity", "neighborIndex")}
-    {FluvioFXAttribute.GetLoadAttributeCode(
-        this,
-        FluvioFXAttribute.DensityPressure,
-        "neighborDensityPressure",
-        "neighborIndex")}
+    {Load(VFXAttribute.Position, "neighborPosition", "neighborIndex")}
+    {Load(VFXAttribute.Mass, "neighborMass", "neighborIndex")}
+    {Load(VFXAttribute.Velocity, "neighborVelocity", "neighborIndex")}
+    {Load(FluvioFXAttribute.DensityPressure, "neighborDensityPressure", "neighborIndex")}
 
     dist = position - neighborPosition;
-#ifndef FLUVIO_INDEX_GRID
-    distLenSq = dot(dist, dist);
-    if (distLenSq >= solverData_KernelSize.y) continue;
-#endif
+
+    // For kernels
+    lenSq = dot(dist, dist);
+    len = sqrt(lenSq);
+    len3 = len * len * len;
+    diffSq = solverData_KernelSize.y - lenSq;
+    diff = solverData_KernelSize.x - len;
 
     // Pressure term
     scalar = neighborMass
         * (densityPressure.y + neighborDensityPressure.y) / (neighborDensityPressure.x * 2.0f);
-    f = SpikyCalculateGradient(dist, solverData_KernelFactors.y, solverData_KernelSize.x);
+    f = SpikyCalculateGradient(dist, diff, len, solverData_KernelFactors.y);
     f *= scalar;
 
     force -= f;
@@ -114,11 +114,7 @@ for (uint neighborIndex = 0; neighborIndex < nbMax; ++neighborIndex)
 
     // Viscosity term
     scalar = neighborMass
-        * ViscosityCalculateLaplacian(
-            dist,
-            solverData_KernelFactors.z,
-            solverData_KernelSize.z,
-            solverData_KernelSize.x)
+        * ViscosityCalculateLaplacian(diff, solverData_KernelSize.z, solverData_KernelFactors.z)
         * invNeighborDensity;
 
     f = neighborVelocity - velocity;
@@ -126,29 +122,23 @@ for (uint neighborIndex = 0; neighborIndex < nbMax; ++neighborIndex)
 
     force += f;
 
-#ifdef FLUVIO_SURFACE_TENSION_ENABLED
-    // Surface tension term (external)
+{(SurfaceTension ? $@"// Surface tension term (external)
     if (normal.w > FLUVIO_PI && normal.w < FLUVIO_TAU)
     {{
         scalar = neighborMass
-            * Poly6CalculateLaplacian(dist, solverData_KernelFactors.x, solverData_KernelSize.y)
+            * Poly6CalculateLaplacian(lenSq, diffSq, solverData_KernelFactors.x)
             * solverData_Fluid_SurfaceTension
             * 1.0f / neighborDensityPressure.x;
 
         f = normal.xyz * scalar;
         force -= f;
-    }}
-#endif
+    }}" : "")}
 }}
 
-#ifdef FLUVIO_GRAVITY_ENABLED
-// Gravity term (external)
+{(Gravity ? $@"// Gravity term (external)
 force += solverData_Gravity * mass;
-#ifdef FLUVIO_BUOYANCY_FORCE_ENABLED
-// Buoyancy term (external)
-force += solverData_Gravity * solverData_Fluid_BuoyancyCoefficient * (densityPressure.x - solverData_Fluid_Density);
-#endif
-#endif
-";
+" : "")}
+{(Gravity && BuoyancyForce ? $@"// Buoyancy term (external)
+force += solverData_Gravity * solverData_Fluid_BuoyancyCoefficient * (densityPressure.x - solverData_Fluid_Density);" : "")}";
     }
 }

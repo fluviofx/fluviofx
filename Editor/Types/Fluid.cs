@@ -33,7 +33,7 @@ namespace Thinksquirrel.FluvioFX.Editor
             "Controls the surface tension of the fluid (intended for liquids only). FluvioFX uses a " +
             "simplified surface tension model that is ideal for realtime use.")]
         public float SurfaceTension;
-        [Min(0.0f), Tooltip(
+        [Tooltip(
             "Controls the buoyancy coefficient of a fluid. This controls the buoyancy force, which is a " +
             "density-dependent force in the opposite direction of gravity. This should be used when " +
             "simulating gas like smoke or fire, or fluids that are less dense than the surrounding " +
@@ -42,29 +42,14 @@ namespace Thinksquirrel.FluvioFX.Editor
 
         public static Fluid defaultValue = new Fluid
         {
-            SmoothingDistance = 0.38125f,
-            ParticleMass = 7.625f,
+            SmoothingDistance = 0.190625f,
+            ParticleMass = 7.241439f,
             Density = 998.29f,
             MinimumDensity = 9.9829f,
             GasConstant = 0.01f,
-            Viscosity = 0.3f,
+            Viscosity = 0.03f,
             SurfaceTension = 0.728f,
             BuoyancyCoefficient = 0.0f,
         };
-
-        internal IEnumerable<VFXNamedExpression> defaultExpressions
-        {
-            get
-            {
-                yield return new VFXNamedExpression(VFXValue.Constant(SmoothingDistance), nameof(SmoothingDistance));
-                yield return new VFXNamedExpression(VFXValue.Constant(ParticleMass), nameof(ParticleMass));
-                yield return new VFXNamedExpression(VFXValue.Constant(Density), nameof(Density));
-                yield return new VFXNamedExpression(VFXValue.Constant(MinimumDensity), nameof(MinimumDensity));
-                yield return new VFXNamedExpression(VFXValue.Constant(GasConstant), nameof(GasConstant));
-                yield return new VFXNamedExpression(VFXValue.Constant(Viscosity), nameof(Viscosity));
-                yield return new VFXNamedExpression(VFXValue.Constant(SurfaceTension), nameof(SurfaceTension));
-                yield return new VFXNamedExpression(VFXValue.Constant(BuoyancyCoefficient), nameof(BuoyancyCoefficient));
-            }
-        }
     }
 }

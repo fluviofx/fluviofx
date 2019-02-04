@@ -24,44 +24,32 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
         {
             get
             {
+                yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.Read);
                 yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
-                if (hasLifetime)
-                {
-                    yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
-                }
                 yield return new VFXAttributeInfo(VFXAttribute.Mass, VFXAttributeMode.Read);
-                // yield return new VFXAttributeInfo(FluvioFXAttribute.NeighborCount, VFXAttributeMode.Read);
                 yield return new VFXAttributeInfo(FluvioFXAttribute.DensityPressure, VFXAttributeMode.Write);
             }
         }
-        public override string source => $@"
+        protected internal override SolverDataParameters solverDataParameters =>
+            SolverDataParameters.Fluid_Density |
+            SolverDataParameters.Fluid_MinimumDensity |
+            SolverDataParameters.Fluid_GasConstant |
+            SolverDataParameters.KernelFactors |
+            SolverDataParameters.KernelSize;
+
+        public override string source => $@"{CheckAlive()}
 float3 dist;
 float density = 0;
-float pressure;
-#ifdef FLUVIO_INDEX_GRID
-uint neighborIndex;
+float pressure, diffSq;
 for (uint j = 0; j < neighborCount; ++j)
 {{
-    neighborIndex = GetNeighborIndex(solverData_Tex, solverData_TexSize, index, j);
-#else
-float distLenSq;
-for (uint neighborIndex = 0; neighborIndex < nbMax; ++neighborIndex)
-{{
-    if (index == neighborIndex) continue;
-    {(hasLifetime ? FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Alive, "neighborAlive", "neighborIndex") : "")}
-    {(hasLifetime ? "if (!neighborAlive) continue;" : "")}
-#endif
-
-    {FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Position, "neighborPosition", "neighborIndex")}
-    {FluvioFXAttribute.GetLoadAttributeCode(this, VFXAttribute.Mass, "neighborMass", "neighborIndex")}
+    {LoadNeighbor("neighborIndex", "index", "j")}
+    {Load(VFXAttribute.Position, "neighborPosition", "neighborIndex")}
+    {Load(VFXAttribute.Mass, "neighborMass", "neighborIndex")}
 
     dist = position - neighborPosition;
-#ifndef FLUVIO_INDEX_GRID
-    distLenSq = dot(dist, dist);
-    if (distLenSq >= solverData_KernelSize.y) continue;
-#endif
-
-    density += neighborMass * Poly6Calculate(dist, solverData_KernelFactors.x, solverData_KernelSize.y);
+    diffSq = solverData_KernelSize.y - dot(dist, dist);
+    density += neighborMass * Poly6Calculate(diffSq, solverData_KernelFactors.x);
 }}
 
 // Write to density/pressure

@@ -11,7 +11,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Operators
 #pragma warning disable 649
         public class InputProperties
         {
-            public Vector2 Range = new Vector2(499.125f, 1247.8125f);
+            public Vector2 Range = new Vector2(499.145f, 9982.9f);
         }
         public class OutputProperties
         {

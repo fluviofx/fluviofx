@@ -13,7 +13,6 @@ namespace Thinksquirrel.FluvioFX.Editor.Integrators
     {
         protected override string source => $@"
 position += velocity * dt + 0.5 * v * dt;
-velocity += v;
-";
+velocity += v;";
     }
 }
