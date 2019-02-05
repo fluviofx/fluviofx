@@ -27,6 +27,9 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
         protected override IEnumerable<VFXPropertyWithValue> inputProperties =>
             Integrator.Get(IntegrationMode).GetInputProperties(base.inputProperties);
 
+        protected internal override SolverDataParameters solverDataParameters =>
+            Integrator.Get(IntegrationMode).solverDataParameters;
+
         public override IEnumerable<VFXNamedExpression> parameters
         {
             get
@@ -38,8 +41,8 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
             }
         }
 
-        public override IEnumerable<VFXAttributeInfo> attributes => Integrator.Get(IntegrationMode).GetAttributes(hasLifetime);
+        public override IEnumerable<VFXAttributeInfo> attributes => Integrator.Get(IntegrationMode).GetAttributes();
 
-        public override string source => Integrator.Get(IntegrationMode).GetSource();
+        public override string source => Integrator.Get(IntegrationMode).GetSource(GetData());
     }
 }

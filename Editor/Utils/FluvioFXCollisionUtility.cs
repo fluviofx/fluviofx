@@ -14,13 +14,13 @@ namespace Thinksquirrel.FluvioFX.Editor
         public class BoundaryPressureProperties
         {
             [Min(FluvioFXSettings.kEpsilon), Tooltip("Gas constant of the collision shape")]
-            public float GasConstant = 2.0f;
+            public float GasConstant = 0.1f;
         }
 
         public class BoundaryViscosityProperties
         {
             [Min(0.0f), Tooltip("Artificial viscosity force of the collision shape")]
-            public float Viscosity = 0.3f;
+            public float Viscosity = 0.03f;
 
             [Tooltip("Velocity of the collider, in meters per second")]
             public Vector Velocity = Vector3.zero;
@@ -76,7 +76,14 @@ namespace Thinksquirrel.FluvioFX.Editor
             IEnumerable<VFXNamedExpression> baseParameters)
         {
             var expressions = baseParameters;
-            expressions = expressions.Concat(FluvioFXBlock.GetSolverDataExpressions(block));
+            expressions = expressions.Concat(InitializeSolver.GetExpressions(
+                block,
+                SolverDataParameters.Fluid_Density |
+                SolverDataParameters.Fluid_MinimumDensity |
+                SolverDataParameters.Fluid_GasConstant |
+                SolverDataParameters.KernelSize |
+                SolverDataParameters.KernelFactors
+            ));
 
             foreach (var expression in expressions)
             {
@@ -86,15 +93,22 @@ namespace Thinksquirrel.FluvioFX.Editor
             yield return new VFXNamedExpression(VFXValue.Constant(1.0f) / VFXBuiltInExpression.DeltaTime, "invDt");
         }
 
-        public static IEnumerable<VFXAttributeInfo> GetAttributes(IEnumerable<VFXAttributeInfo> baseAttributes)
+        public static IEnumerable<VFXAttributeInfo> GetAttributes(
+            CollisionBase block,
+            IEnumerable<VFXAttributeInfo> baseAttributes)
         {
+            var hasPreviousPosition = block.GetData().IsCurrentAttributeWritten(FluvioFXAttribute.PreviousPosition);
+            if (hasPreviousPosition)
+            {
+                yield return new VFXAttributeInfo(FluvioFXAttribute.PreviousPosition, VFXAttributeMode.Read);
+            }
+
             foreach (var attribute in baseAttributes)
             {
                 yield return attribute;
             }
 
             yield return new VFXAttributeInfo(VFXAttribute.ParticleId, VFXAttributeMode.Read);
-            yield return new VFXAttributeInfo(VFXAttribute.OldPosition, VFXAttributeMode.Read);
             yield return new VFXAttributeInfo(VFXAttribute.Mass, VFXAttributeMode.Read);
             yield return new VFXAttributeInfo(FluvioFXAttribute.DensityPressure, VFXAttributeMode.ReadWrite);
             yield return new VFXAttributeInfo(FluvioFXAttribute.Force, VFXAttributeMode.ReadWrite);
@@ -104,6 +118,15 @@ namespace Thinksquirrel.FluvioFX.Editor
             ICollisionSettings settings,
             string roughSurfaceSource)
         {
+            var hasPreviousPosition = false;
+            var hasLifetime = false;
+            var block = settings as VFXBlock;
+            if (block != null)
+            {
+                hasPreviousPosition = block.GetData().IsCurrentAttributeWritten(FluvioFXAttribute.PreviousPosition);
+                hasLifetime = block.GetData().IsCurrentAttributeWritten(VFXAttribute.Alive);
+            }
+
             var src = "";
             if (settings.RoughSurface)
             {
@@ -127,7 +150,7 @@ namespace Thinksquirrel.FluvioFX.Editor
     {(settings.RepulsionForce ? "force += v * (1.0f / mass) * RepulsionForce * invDt;" : "")}
 
     velocity += v;
-    oldPosition = position;
+    {(hasPreviousPosition ? "previousPosition = position - v;" : "")}
     age += (LifetimeLoss * lifetime);";
 
             return src;
@@ -158,15 +181,16 @@ namespace Thinksquirrel.FluvioFX.Editor
             }, StringSplitOptions.None);
             proxyTestSource = string.Join("\n                ", split);
 
-            return $@"
+            var data = (settings as VFXBlock)?.GetData();
+            return $@"{FluvioFXBlock.CheckAlive(data)}
 {{
     float3 offset, proxyPosition, dummyPosition, dist;
     float density = 0;
-    float pressure, distLenSq;
+    float pressure, lenSq, diffSq;
     bool collisionTest = false;
 
     float searchRadius = solverData_KernelSize.x;
-    float step = solverData_KernelSize.x * 0.5f;
+    float step = solverData_KernelSize.w;
 
     float3 gridJitter = float3(FIXED_RAND3(0x5f7b48e2)) * step;
 
@@ -193,11 +217,12 @@ namespace Thinksquirrel.FluvioFX.Editor
                     // Range check
                     // TODO: We can optimize this away since we know the precise step size
                     dist = position - proxyPosition;
-                    distLenSq = dot(dist, dist);
-                    if (distLenSq < solverData_KernelSize.y)
+                    lenSq = dot(dist, dist);
+                    if (lenSq < solverData_KernelSize.y)
                     {{
                         // Sum density
-                        density += mass * Poly6Calculate(dist, solverData_KernelFactors.x, solverData_KernelSize.y);
+                        diffSq = solverData_KernelSize.y - lenSq;
+                        density += mass * Poly6Calculate(diffSq, solverData_KernelFactors.x);
                     }}
                 }}
             }}
@@ -211,7 +236,7 @@ namespace Thinksquirrel.FluvioFX.Editor
         solverData_Fluid_Density,
         {(settings.BoundaryPressure ? "GasConstant * solverData_Fluid_Density" : "0")});
 
-    float scalar, bodyRadiusSq;
+    float len, len3, diff, bodyRadiusSq, scalar;
     float3 f, neighborVelocity, bodyDist;
     for(x = -searchRadius; x < searchRadius; x += step)
     {{
@@ -238,13 +263,20 @@ namespace Thinksquirrel.FluvioFX.Editor
                     // Range check
                     // TODO: We can optimize this away since we know the precise step size
                     dist = position - proxyPosition;
-                    distLenSq = dot(dist, dist);
-                    if (distLenSq < solverData_KernelSize.y)
+                    lenSq = dot(dist, dist);
+                    if (lenSq < solverData_KernelSize.y)
                     {{
+                        // For kernels
+                        lenSq = dot(dist, dist);
+                        len = sqrt(lenSq);
+                        len3 = len * len * len;
+                        diffSq = solverData_KernelSize.y - lenSq;
+                        diff = solverData_KernelSize.x - len;
+
                         {(settings.BoundaryPressure ? @"// Pressure term
                         scalar = mass
                             * (pressure + neighborDensityPressure.y) / (neighborDensityPressure.x * 2.0f);
-                        f = SpikyCalculateGradient(dist, solverData_KernelFactors.y, solverData_KernelSize.x);
+                        f = SpikyCalculateGradient(dist, diff, len, solverData_KernelFactors.y);
                         f *= scalar;
 
                         force -= f;" : "")}
@@ -256,10 +288,9 @@ namespace Thinksquirrel.FluvioFX.Editor
 
                         scalar = mass
                             * ViscosityCalculateLaplacian(
-                                dist,
-                                solverData_KernelFactors.z,
+                                diff,
                                 solverData_KernelSize.z,
-                                solverData_KernelSize.x)
+                                solverData_KernelFactors.z)
                             * (1.0f / neighborDensityPressure.x);
 
                         f = neighborVelocity - velocity;

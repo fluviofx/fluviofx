@@ -25,20 +25,24 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
             get
             {
                 yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.Read);
-                if (hasLifetime)
-                {
-                    yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
-                }
-                // yield return new VFXAttributeInfo(FluvioFXAttribute.GridIndex, VFXAttributeMode.Write);
             }
         }
 
-        public override string source =>
-            @"
-#ifdef FLUVIO_INDEX_GRID
-// indices are +1 for GPU grids (0 = not alive)
-gridIndex = GetGridIndexFromPosition(position, solverData_KernelSize.x) + 1;
-#endif
-";
+        protected internal override SolverDataParameters solverDataParameters => SolverDataParameters.KernelSize;
+
+        public override string source => $@"{CheckAlive()}
+// Get location
+int3 location3 = GetLocation3(position, solverData_KernelSize.x);
+uint location = GetLocation(location3, asuint(nbMax));
+uint original;
+
+for (uint bucketIndex = 0; bucketIndex < FLUVIO_MAX_BUCKET_COUNT; ++bucketIndex)
+{{
+    // Store in bucket, +1 for bucket IDs
+    {CompareExchangeBucket("location", "bucketIndex", "0", "index + 1", "original")}
+
+    // Successfully stored
+    if (original == 0) return;
+}}";
     }
 }

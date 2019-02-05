@@ -14,11 +14,11 @@ namespace Thinksquirrel.FluvioFX.Editor
     [InitializeOnLoad]
     internal static class FluvioFXInstall
     {
+        #region Replacements
         /* fixformat ignore:start */
         private const string integrationFile = @"
 using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo(""Thinksquirrel.FluvioFX.Editor"")]";
-/* fixformat ignore:end */
         private const string integrationFileMeta = @"fileFormatVersion: 2
 guid: 2d81f0f187dd44d2aa907b6dda8b8b85
 MonoImporter:
@@ -60,8 +60,49 @@ VisualEffectImporter:
         public static event Func<VFXContext, StringBuilder, StringBuilder> OnGenerateCode;
         // END FluvioFX";
 
+        private const string attributeSummary = @"foreach (var attr in attributes)
+                    {";
+        private const string attributeSummaryReplace = @"foreach (var attr in attributes)
+                    {
+                        // START FluvioFX
+                        if (attr.attrib.name.StartsWith(""neighbors_"") ||
+                            attr.attrib.name.StartsWith(""buckets_"")) continue;
+                        // END FluvioFX
+";
+        private const string sourceAttributeLayout = @"DoAttributeLayoutGUI(""Source Attribute Layout"", source);";
+        private const string sourceAttributeLayoutReplace = @"// START FluvioFX
+                    DoAttributeLayoutGUI(
+                    ""Source Attribute Layout (FluvioFX: buckets/neighbors hidden)"",
+                    current
+                        .Where((bucket) =>
+                            !bucket.attributes.All((attr) =>
+                                attr.name.StartsWith(""neighbors_"") ||
+                                attr.name.StartsWith(""buckets_""))
+                        )
+                        .ToArray()
+                    );
+                    // END FluvioFX
+";
+        private const string currentAttributeLayout = @"DoAttributeLayoutGUI(""Current Attribute Layout"", current);";
+        private const string currentAttributeLayoutReplace = @"// START FluvioFX
+                    DoAttributeLayoutGUI(
+                    ""Current Attribute Layout (FluvioFX: buckets/neighbors hidden)"",
+                    current
+                        .Where((bucket) =>
+                            !bucket.attributes.All((attr) =>
+                                attr.name.StartsWith(""neighbors_"") ||
+                                attr.name.StartsWith(""buckets_""))
+                        )
+                        .ToArray()
+                    );
+                    // END FluvioFX
+";
+        /* fixformat ignore:end */
+        #endregion Replacements
+
         static FluvioFXInstall()
         {
+
             EditorApplication.update += UpdateEvt;
         }
 
@@ -104,7 +145,7 @@ VisualEffectImporter:
             // Does FluvioFXIntegration.cs exist?
             var integrationFileExists = File.Exists($"{vfxPath}/Editor/FluvioFXIntegration.cs");
 
-            // VFXCodeGenerator.cs can't be found
+            // Does VFXCodeGenerator.cs exist?
             var vfxCodeGenPath = $"{vfxPath}/Editor/Compiler/VFXCodeGenerator.cs";
             string vfxCodeGenFile;
             try
@@ -120,11 +161,30 @@ VisualEffectImporter:
                 return;
             }
 
+            // Does VFXContextEditor.cs exist?
+            var vfxContextEditorPath = $"{vfxPath}/Editor/Inspector/VFXContextEditor.cs";
+            string vfxContextEditorFile;
+            try
+            {
+                vfxContextEditorFile = File
+                    .ReadAllText(vfxContextEditorPath)
+                    .Replace("\r\n", "\n");
+            }
+            catch
+            {
+                Debug.LogWarning("Cannot install FluvioFX. Unable to open VFXContextEditor.cs, which is not supported");
+                SetDefine(false);
+                return;
+            }
+
             // Check if already installed
             if (!force &&
                 integrationFileExists &&
                 vfxCodeGenFile.Contains(codeGenEventReplace) &&
-                vfxCodeGenFile.Contains(codeGenEventCallReplace))
+                vfxCodeGenFile.Contains(codeGenEventCallReplace) &&
+                vfxContextEditorFile.Contains(attributeSummaryReplace) &&
+                vfxContextEditorFile.Contains(sourceAttributeLayoutReplace) &&
+                vfxContextEditorFile.Contains(currentAttributeLayoutReplace))
             {
                 SetDefine(true);
                 return;
@@ -148,21 +208,33 @@ VisualEffectImporter:
                     .Replace(codeGenEventCall.Replace("\r\n", "\n"), codeGenEventCallReplace.Replace("\r\n", "\n"))
                     .Replace(codeGenEvent.Replace("\r\n", "\n"), codeGenEventReplace.Replace("\r\n", "\n"));
 
+                // Modify VFXContextEditor.cs
+                vfxContextEditorFile = vfxContextEditorFile
+                    .Replace(attributeSummaryReplace.Replace("\r\n", "\n"), attributeSummary.Replace("\r\n", "\n"))
+                    .Replace(sourceAttributeLayoutReplace.Replace("\r\n", "\n"), sourceAttributeLayout.Replace("\r\n", "\n"))
+                    .Replace(currentAttributeLayoutReplace.Replace("\r\n", "\n"), currentAttributeLayout.Replace("\r\n", "\n"))
+                    .Replace(attributeSummary.Replace("\r\n", "\n"), attributeSummaryReplace.Replace("\r\n", "\n"))
+                    .Replace(sourceAttributeLayout.Replace("\r\n", "\n"), sourceAttributeLayoutReplace.Replace("\r\n", "\n"))
+                    .Replace(currentAttributeLayout.Replace("\r\n", "\n"), currentAttributeLayoutReplace.Replace("\r\n", "\n"));
+
                 try
                 {
                     // Save VFXCodeGenerator.cs
-                    SaveReadOnlyFile(vfxCodeGenPath, vfxCodeGenFile);
+                    SaveReadOnlyFile(vfxCodeGenPath, vfxCodeGenFile, true);
+
+                    // Save VFXContextEditor.cs
+                    SaveReadOnlyFile(vfxContextEditorPath, vfxContextEditorFile, true);
 
                     // Add FluvioFXIntegration.cs
                     var integrationFilePath = $"{vfxPath}/Editor/FluvioFXIntegration.cs";
-                    SaveReadOnlyFile(integrationFilePath, integrationFile);
-                    SaveReadOnlyFile($"{integrationFilePath}.meta", integrationFileMeta);
+                    SaveReadOnlyFile(integrationFilePath, integrationFile, false);
+                    SaveReadOnlyFile($"{integrationFilePath}.meta", integrationFileMeta, false);
 
                     // Copy templates
                     foreach (var(fluvioTemplatePath, vfxTemplatePath, newGuid) in GetTemplatePaths())
                     {
                         CopyReadOnlyFile(fluvioTemplatePath, vfxTemplatePath);
-                        SaveReadOnlyFile($"{vfxTemplatePath}.meta", templateFileMeta.Replace("{GUID}", newGuid));
+                        SaveReadOnlyFile($"{vfxTemplatePath}.meta", templateFileMeta.Replace("{GUID}", newGuid), false);
                     }
 
                     // Add scripting define
@@ -242,13 +314,25 @@ VisualEffectImporter:
             }
         }
 
-        private static void SaveReadOnlyFile(string path, string text)
+        private static void SaveReadOnlyFile(string path, string text, bool backup)
         {
             path = path.Replace("\\", "/");
 
             if (File.Exists(path))
             {
                 File.SetAttributes(path, FileAttributes.Normal);
+                if (backup)
+                {
+                    var backupPath = Path.Combine(
+                        Path.GetDirectoryName(path),
+                        $".{Path.GetFileName(path)}.backup"
+                    );
+                    if (!File.Exists(backupPath))
+                    {
+                        File.Copy(path, backupPath);
+                        File.SetAttributes(backupPath, FileAttributes.ReadOnly);
+                    }
+                }
             }
             File.WriteAllText(path, text);
             File.SetAttributes(path, FileAttributes.ReadOnly);

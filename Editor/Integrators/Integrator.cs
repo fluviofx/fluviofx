@@ -32,6 +32,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Integrators
         protected virtual IEnumerable<Type> inputPropertyTypes => null;
         protected virtual IEnumerable<VFXNamedExpression> parameters => null;
         protected virtual IEnumerable<VFXAttributeInfo> attributes => null;
+        public virtual SolverDataParameters solverDataParameters => SolverDataParameters.None;
         protected abstract string source
         {
             get;
@@ -72,13 +73,10 @@ namespace Thinksquirrel.FluvioFX.Editor.Integrators
                 }
             }
         }
-        public IEnumerable<VFXAttributeInfo> GetAttributes(bool hasLifetime)
+
+        public IEnumerable<VFXAttributeInfo> GetAttributes()
         {
             yield return new VFXAttributeInfo(VFXAttribute.Position, VFXAttributeMode.ReadWrite);
-            if (hasLifetime)
-            {
-                yield return new VFXAttributeInfo(VFXAttribute.Alive, VFXAttributeMode.Read);
-            }
             yield return new VFXAttributeInfo(VFXAttribute.Mass, VFXAttributeMode.Read);
             yield return new VFXAttributeInfo(FluvioFXAttribute.Force, VFXAttributeMode.Read);
             yield return new VFXAttributeInfo(VFXAttribute.Velocity, VFXAttributeMode.ReadWrite);
@@ -92,9 +90,9 @@ namespace Thinksquirrel.FluvioFX.Editor.Integrators
             }
         }
 
-        public string GetSource()
+        public string GetSource(VFXData data)
         {
-            return $@"
+            return $@"{FluvioFXBlock.CheckAlive(data)}
 float invMass = 1.0f / mass;
 float3 acceleration = force * invMass;
 float3 v = dt * acceleration;
@@ -104,7 +102,6 @@ if (any(isnan(v) || isinf(v)) || dot(v, v) > FLUVIO_MAX_SQR_VELOCITY_CHANGE)
 {{
     v = 0;
 }}
-
 {source}";
         }
     }
