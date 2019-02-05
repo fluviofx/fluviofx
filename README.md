@@ -8,13 +8,11 @@ FluvioFX is currently in early active development. While we will try to maintain
 
 ## Requirements
 
-Unity version: 2018.3+
+### Unity version
+2018.3+
 
-Since Unity's Visual Effect Graph currently requires HDRP, FluvioFX requires it as well. It must be installed and configured separately (see _[The High Definition Render Pipeline: Getting Started Guide for Artists](https://blogs.unity3d.com/2018/09/24/the-high-definition-render-pipeline-getting-started-guide-for-artists/)_ for more information)
-
-### Additional performance considerations
-
-Unity's Visual Effect Graph has a key limitation preventing the implementation of a broadphase step in the physics simulation. This has a moderate performance impact on all platforms, and severe impact on certain platforms (Metal in particular). We expect to fix this as soon as we get or figure out a possible resolution. (See [#1](https://github.com/thinksquirrel/fluviofx/issues/1) for details)
+### Render pipelines
+Fluvio does not handle rendering on its own, instead relying on the Visual Effect Graph for that functionality. As such, HDRP is highly recommended. The legacy pipeline may work, but is not currently supported.
 
 ## Installation
 
@@ -35,11 +33,13 @@ This workaround will be removed once the VFX Graph's API has been finalized. See
 
 ## Getting started
 
-To create a new fluid VFX asset, navigate to _Assets > Create > Visual Effects > FluvioFX Graph_.
+To create a new fluid VFX asset, navigate to _Assets > Create > Visual Effects > FluvioFX Graph_. You can also add a Fluid Particle System to an existing graph under the _Systems_ menu in the graph.
+
+The default graphs include many helpful sticky notes with more information, so it is highly recommended to use this for initial setup.
 
 ## Documentation
 
-~~See full documentaion [here](./Documentation~/index.md).~~ Documentation is coming soon!
+~~See full documentaion [here](./Documentation~/index.md).~~ Full documentation is coming soon! For now, take a look at the sticky notes in the graph for help.
 
 ## Examples
 
