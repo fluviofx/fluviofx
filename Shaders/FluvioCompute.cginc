@@ -22,7 +22,7 @@ inline uint GetLocation(int3 location3, uint count)
 
 inline int3 GetLocation3(float3 position, float cellSpace)
 {
-    return (int3)((position + float3(1.0f / FLUVIO_EPSILON, 1.0f / FLUVIO_EPSILON, 1.0f / FLUVIO_EPSILON)) / cellSpace);
+    return (int3)((position + float3(1000000, 1000000, 1000000)) / cellSpace);
 }
 
 // ---------------------------------------------------------------------------------------

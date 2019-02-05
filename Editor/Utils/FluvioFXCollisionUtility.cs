@@ -20,7 +20,7 @@ namespace Thinksquirrel.FluvioFX.Editor
         public class BoundaryViscosityProperties
         {
             [Min(0.0f), Tooltip("Artificial viscosity force of the collision shape")]
-            public float Viscosity = 0.3f;
+            public float Viscosity = 0.03f;
 
             [Tooltip("Velocity of the collider, in meters per second")]
             public Vector Velocity = Vector3.zero;
