@@ -57,12 +57,6 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
                 fluid = new List<VFXNamedExpression>();
                 foreach (var expression in GetExpressionsFromSlots(initializeBlock))
                 {
-                    // Only add for this step
-                    if (expression.name == $"{nameof(InputProperties.SizeMultiplier)}")
-                    {
-                        if (block == initializeBlock) yield return expression;
-                        continue;
-                    }
                     if (expression.name == $"{nameof(InputProperties.Fluid)}_{nameof(Fluid.SmoothingDistance)}")
                     {
                         // We use solverData_KernelSize instead
@@ -248,7 +242,6 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
         {
             public Fluid Fluid;
             public Vector Gravity;
-            [Min(0.0f)] public float SizeMultiplier = 1.0f;
         }
 #pragma warning restore 649
 
@@ -289,17 +282,14 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
 force = 0;
 
 // Set mass
-mass = solverData_Fluid_ParticleMass;
-
-// Set size";
+mass = solverData_Fluid_ParticleMass;";
                 if (AutomaticSize)
                 {
                     str += $@"
+
+// Set size
 size = solverData_KernelSize.x * FLUVIO_AUTO_PARTICLE_SIZE_FACTOR;";
                 }
-
-                str += $@"
-size *= SizeMultiplier;";
 
                 if (hasLifetime)
                 {
