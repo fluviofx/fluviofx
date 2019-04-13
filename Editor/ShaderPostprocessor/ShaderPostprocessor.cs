@@ -62,7 +62,7 @@ namespace Thinksquirrel.FluvioFX.Editor
             if (shouldModify)
             {
                 var data = context.GetData() as VFXDataParticle;
-                var defines = $@"
+                var defines = FormattableString.Invariant($@"
 // FluvioFX simulation constants
 #define FLUVIO_EPSILON {FluvioFXSettings.kEpsilon}
 #define FLUVIO_MAX_SQR_VELOCITY_CHANGE {FluvioFXSettings.kMaxSqrVelocityChange}
@@ -71,7 +71,7 @@ namespace Thinksquirrel.FluvioFX.Editor
 #define FLUVIO_AUTO_PARTICLE_SIZE_FACTOR {FluvioFXSettings.kAutoParticleSizeFactor}
 #define FLUVIO_MAX_GRID_SIZE {(uint)Mathf.Pow(data?.capacity ?? 262144, 1.0f / 3.0f)}
 
-";
+");
 
                 var result = defines + source.ToString().Replace("\r\n", "\n");
 
