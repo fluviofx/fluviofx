@@ -8,15 +8,18 @@ FluvioFX is currently in early active development. While we will try to maintain
 
 ## Requirements
 
-### Unity version
-2018.3+
-
-### Render pipelines
-Fluvio does not handle rendering on its own, instead relying on the Visual Effect Graph for that functionality. As such, HDRP is highly recommended. The legacy pipeline may work, but is not currently supported.
+- Unity 2018.3 or newer
+- HDRP (or LWRP with Unity 2019.1 or newer)
+- Unity 2018.3+ only:
+    - Visual Effect Graph 4.9.0-preview or newer
+- Unity 2019.1+ only:
+    - Visual Effect Graph 5.2.0-preview or newer
 
 ## Installation
 
-To install this project, add the following line to `dependencies` in your `manifest.json` (in the **Packages** subfolder of your Unity project):
+First, make sure all required packages are installed. These *must* be installed manually before installing FluvioFX.
+
+Once all required packages are added, add the following line to `dependencies` in your `manifest.json` (in the **Packages** subfolder of your Unity project):
 
 ```json
 "com.thinksquirrel.fluviofx": "https://github.com/thinksquirrel/fluviofx.git"
