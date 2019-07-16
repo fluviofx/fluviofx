@@ -330,12 +330,10 @@ VisualEffectImporter:
                     if (!File.Exists(backupPath))
                     {
                         File.Copy(path, backupPath);
-                        File.SetAttributes(backupPath, FileAttributes.ReadOnly);
                     }
                 }
             }
             File.WriteAllText(path, text);
-            File.SetAttributes(path, FileAttributes.ReadOnly);
         }
 
         private static void CopyReadOnlyFile(string from, string to)
@@ -350,7 +348,6 @@ VisualEffectImporter:
             if (File.Exists(from))
             {
                 File.Copy(from, to, true);
-                File.SetAttributes(to, FileAttributes.ReadOnly);
             }
         }
     }

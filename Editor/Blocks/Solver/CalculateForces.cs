@@ -81,64 +81,89 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
             }
         }
 
-        public override string source => $@"{CheckAlive()}
-float3 dist, f, invNeighborDensity;
-float lenSq, len, len3, diffSq, diff, scalar;
-for (uint j = 0; j < neighborCount; ++j)
-{{
-    {LoadNeighbor("neighborIndex", "index", "j")}
+        public override string source
+        {
+            get
+            {
+                string src =
+                    $@"{CheckAlive()}
+        float3 dist, f;
+        float invNeighborDensity, lenSq, len, len3, diff, diffSq, scalar;
+        for (uint j = 0; j < neighborCount; ++j)
+        {{
+            {LoadNeighbor("neighborIndex", "index", "j")}
 
-    {Load(VFXAttribute.Position, "neighborPosition", "neighborIndex")}
-    {Load(VFXAttribute.Mass, "neighborMass", "neighborIndex")}
-    {Load(VFXAttribute.Velocity, "neighborVelocity", "neighborIndex")}
-    {Load(FluvioFXAttribute.DensityPressure, "neighborDensityPressure", "neighborIndex")}
+            {Load(VFXAttribute.Position, "neighborPosition", "neighborIndex")}
+            {Load(VFXAttribute.Mass, "neighborMass", "neighborIndex")}
+            {Load(VFXAttribute.Velocity, "neighborVelocity", "neighborIndex")}
+            {Load(FluvioFXAttribute.DensityPressure, "neighborDensityPressure", "neighborIndex")}
 
-    dist = position - neighborPosition;
+            dist = position - neighborPosition;
 
-    // For kernels
-    lenSq = dot(dist, dist);
-    len = sqrt(lenSq);
-    len3 = len * len * len;
-    diffSq = solverData_KernelSize.y - lenSq;
-    diff = solverData_KernelSize.x - len;
+            // For kernels
+            lenSq = dot(dist, dist);
+            len = sqrt(lenSq);
+            len3 = len * len * len;
+            diffSq = solverData_KernelSize.y - lenSq;
+            diff = solverData_KernelSize.x - len;
 
-    // Pressure term
-    scalar = neighborMass
-        * (densityPressure.y + neighborDensityPressure.y) / (neighborDensityPressure.x * 2.0f);
-    f = SpikyCalculateGradient(dist, diff, len, solverData_KernelFactors.y);
-    f *= scalar;
+            // Pressure term
+            scalar = neighborMass
+                * (densityPressure.y + neighborDensityPressure.y) / (neighborDensityPressure.x * 2.0f);
+            f = SpikyCalculateGradient(dist, diff, len, solverData_KernelFactors.y);
+            f *= scalar;
 
-    force -= f;
+            force -= f;
 
-    invNeighborDensity = 1.0f / neighborDensityPressure.x;
+            invNeighborDensity = 1.0f / neighborDensityPressure.x;
 
-    // Viscosity term
-    scalar = neighborMass
-        * ViscosityCalculateLaplacian(diff, solverData_KernelSize.z, solverData_KernelFactors.z)
-        * invNeighborDensity;
+            // Viscosity term
+            scalar = neighborMass
+                * ViscosityCalculateLaplacian(diff, solverData_KernelSize.z, solverData_KernelFactors.z)
+                * invNeighborDensity;
 
-    f = neighborVelocity - velocity;
-    f *= scalar * solverData_Fluid_Viscosity;
+            f = neighborVelocity - velocity;
+            f *= scalar * solverData_Fluid_Viscosity;
 
-    force += f;
+            force += f;";
 
-{(SurfaceTension ? $@"// Surface tension term (external)
-    if (normal.w > FLUVIO_PI && normal.w < FLUVIO_TAU)
-    {{
-        scalar = neighborMass
-            * Poly6CalculateLaplacian(lenSq, diffSq, solverData_KernelFactors.x)
-            * solverData_Fluid_SurfaceTension
-            * 1.0f / neighborDensityPressure.x;
+                if (SurfaceTension)
+                {
+                    src += $@"
 
-        f = normal.xyz * scalar;
-        force -= f;
-    }}" : "")}
-}}
+            // Surface tension term (external)
+            if (normal.w > FLUVIO_PI && normal.w < FLUVIO_TAU)
+            {{
+                scalar = neighborMass
+                    * Poly6CalculateLaplacian(lenSq, diffSq, solverData_KernelFactors.x)
+                    * solverData_Fluid_SurfaceTension
+                    * 1.0f / neighborDensityPressure.x;
 
-{(Gravity ? $@"// Gravity term (external)
-force += solverData_Gravity * mass;
-" : "")}
-{(Gravity && BuoyancyForce ? $@"// Buoyancy term (external)
-force += solverData_Gravity * solverData_Fluid_BuoyancyCoefficient * (densityPressure.x - solverData_Fluid_Density);" : "")}";
+                f = normal.xyz * scalar;
+                force -= f;
+            }}";
+                }
+
+                src += @"
+        }";
+
+                if (Gravity)
+                {
+                    src += $@"
+
+        // Gravity term (external)
+        force += solverData_Gravity * mass;";
+
+                    if (BuoyancyForce)
+                    {
+                        src += $@"
+        // Buoyancy term (external)
+        force += solverData_Gravity * solverData_Fluid_BuoyancyCoefficient * (densityPressure.x - solverData_Fluid_Density);";
+                    }
+                }
+
+                return src;
+            }
+        }
     }
 }
