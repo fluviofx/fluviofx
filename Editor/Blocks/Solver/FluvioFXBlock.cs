@@ -20,7 +20,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
         {
             get
             {
-                return VFXContextType.kUpdate;
+                return VFXContextType.Update;
             }
         }
 
@@ -28,7 +28,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
         {
             get
             {
-                return VFXDataType.kParticle;
+                return VFXDataType.Particle;
             }
         }
 
@@ -97,7 +97,7 @@ namespace Thinksquirrel.FluvioFX.Editor.Blocks
                 int hash = 0;
                 foreach (var setting in settings)
                 {
-                    var value = setting.GetValue(this);
+                    var value = setting.value;
                     hash = (hash * 397) ^ value.GetHashCode();
                 }
                 return string.Format("{0}_{1}", GetType().Name, hash.ToString("X"));

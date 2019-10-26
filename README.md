@@ -8,12 +8,8 @@ FluvioFX is currently in early active development. While we will try to maintain
 
 ## Requirements
 
-- Unity 2018.3 or newer
-- HDRP (or LWRP with Unity 2019.1 or newer)
-- Unity 2018.3+ only:
-    - Visual Effect Graph 4.9.0-preview or newer
-- Unity 2019.1+ only:
-    - Visual Effect Graph 5.2.0-preview or newer
+- Unity 2019.2 or newer
+- Visual Effect Graph 6.9.1 or newer
 
 ## Installation
 
