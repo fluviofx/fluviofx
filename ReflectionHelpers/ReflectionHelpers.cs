@@ -5,10 +5,10 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using UnityEditor;
 
-[assembly : InternalsVisibleTo("Thinksquirrel.FluvioFX.Editor")]
-[assembly : InternalsVisibleTo("Thinksquirrel.FluvioFX.Install")]
+[assembly : InternalsVisibleTo("FluvioFX.Editor")]
+[assembly : InternalsVisibleTo("FluvioFX.Install")]
 
-namespace Thinksquirrel.FluvioFX.Editor
+namespace FluvioFX.Editor
 {
     #region Parameters
     struct Parameter

@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Thinksquirrel.FluvioFX.Editor.Integrators;
+using FluvioFX.Editor.Integrators;
 using UnityEditor.VFX;
 using UnityEngine;
 using UnityEngine.Experimental.VFX;
 
-namespace Thinksquirrel.FluvioFX.Editor.Blocks
+namespace FluvioFX.Editor.Blocks
 {
     [VFXInfo(category = "FluvioFX/Solver")]
     class IntegrateParticles : FluvioFXBlock

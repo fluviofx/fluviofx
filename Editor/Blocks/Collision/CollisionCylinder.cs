@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEditor.VFX;
 using UnityEngine;
 
-namespace Thinksquirrel.FluvioFX.Editor.Blocks
+namespace FluvioFX.Editor.Blocks
 {
     [VFXInfo(category = "FluvioFX/Collision")]
     class CollisionCylinder : UnityEditor.VFX.Block.CollisionCylinder, ICollisionSettings

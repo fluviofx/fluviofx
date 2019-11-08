@@ -1,4 +1,4 @@
-namespace Thinksquirrel.FluvioFX.Editor.Blocks
+namespace FluvioFX.Editor.Blocks
 {
     internal interface ICollisionSettings
     {

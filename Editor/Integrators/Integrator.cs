@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Thinksquirrel.FluvioFX.Editor.Blocks;
+using FluvioFX.Editor.Blocks;
 using UnityEditor.VFX;
 using UnityEngine;
 using UnityEngine.Experimental.VFX;
 
-namespace Thinksquirrel.FluvioFX.Editor.Integrators
+namespace FluvioFX.Editor.Integrators
 {
     internal abstract class Integrator
     {

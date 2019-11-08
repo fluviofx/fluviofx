@@ -9,7 +9,7 @@ using UnityEditorInternal;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace Thinksquirrel.FluvioFX.Editor
+namespace FluvioFX.Editor
 {
     [InitializeOnLoad]
     internal static class FluvioFXInstall
@@ -18,7 +18,7 @@ namespace Thinksquirrel.FluvioFX.Editor
         /* fixformat ignore:start */
         private const string integrationFile = @"
 using System.Runtime.CompilerServices;
-[assembly: InternalsVisibleTo(""Thinksquirrel.FluvioFX.Editor"")]";
+[assembly: InternalsVisibleTo(""FluvioFX.Editor"")]";
         private const string integrationFileMeta = @"fileFormatVersion: 2
 guid: 2d81f0f187dd44d2aa907b6dda8b8b85
 MonoImporter:
@@ -106,7 +106,7 @@ VisualEffectImporter:
         private const string serializerReplace = @"// START FluvioFX
                 if (type == null) // resolve FluvioFX type if editor assembly didnt work
                 {
-                    splitted[1] = splitted[1].Replace(""Unity.VisualEffectGraph"", ""Thinksquirrel.FluvioFX"");
+                    splitted[1] = splitted[1].Replace(""Unity.VisualEffectGraph"", ""FluvioFX"");
                     name = string.Join("","", splitted);
                     type = Type.GetType(name);
                 }
@@ -153,7 +153,7 @@ VisualEffectImporter:
             }
 
             // FluvioFX path doesn't exist (sanity check)
-            var fluvioFxPath = GetPackagePath("com.thinksquirrel.fluviofx");
+            var fluvioFxPath = GetPackagePath("com.fluvio.fx");
             if (fluvioFxPath == null)
             {
                 Debug.LogWarning(
@@ -323,7 +323,7 @@ VisualEffectImporter:
 
         private static IEnumerable < (string fluvioPath, string vfxPath, string newGuid) > GetTemplatePaths()
         {
-            var fluvioRoot = GetPackagePath($"com.thinksquirrel.fluviofx");
+            var fluvioRoot = GetPackagePath($"com.fluvio.fx");
             var vfxRoot = GetPackagePath($"com.unity.visualeffectgraph");
 
             var template1 = "/Editor/Templates/Fluid Particle System.vfx";
