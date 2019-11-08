@@ -97,6 +97,27 @@ VisualEffectImporter:
                     );
                     // END FluvioFX
 ";
+        private const string serializer = @"if (type == null) // resolve runtime type if editor assembly didnt work
+                {
+                    splitted[1] = splitted[1].Replace("".Editor"", "".Runtime"");
+                    name = string.Join("","", splitted);
+                    type = Type.GetType(name);
+                }";
+        private const string serializerReplace = @"// START FluvioFX
+                if (type == null) // resolve FluvioFX type if editor assembly didnt work
+                {
+                    splitted[1] = splitted[1].Replace(""Unity.VisualEffectGraph"", ""Thinksquirrel.FluvioFX"");
+                    name = string.Join("","", splitted);
+                    type = Type.GetType(name);
+                }
+                // END FluvioFX
+
+                if (type == null) // resolve runtime type if editor assembly didnt work
+                {
+                    splitted[1] = splitted[1].Replace("".Editor"", "".Runtime"");
+                    name = string.Join("","", splitted);
+                    type = Type.GetType(name);
+                }";
         /* fixformat ignore:end */
         #endregion Replacements
 
@@ -177,6 +198,22 @@ VisualEffectImporter:
                 return;
             }
 
+            // Does VFXSerializer.cs exist?
+            var vfxSerializerPath = $"{vfxPath}/Editor/Core/VFXSerializer.cs";
+            string vfxSerializerFile;
+            try
+            {
+                vfxSerializerFile = File
+                    .ReadAllText(vfxSerializerPath)
+                    .Replace("\r\n", "\n");
+            }
+            catch
+            {
+                Debug.LogWarning("Cannot install FluvioFX. Unable to open VFXSerializer.cs, which is not supported");
+                SetDefine(false);
+                return;
+            }
+
             // Check if already installed
             if (!force &&
                 integrationFileExists &&
@@ -184,7 +221,9 @@ VisualEffectImporter:
                 vfxCodeGenFile.Contains(codeGenEventCallReplace) &&
                 vfxContextEditorFile.Contains(attributeSummaryReplace) &&
                 vfxContextEditorFile.Contains(sourceAttributeLayoutReplace) &&
-                vfxContextEditorFile.Contains(currentAttributeLayoutReplace))
+                vfxContextEditorFile.Contains(currentAttributeLayoutReplace) &&
+                vfxSerializerFile.Contains(sourceAttributeLayoutReplace) &&
+                vfxSerializerFile.Contains(currentAttributeLayoutReplace))
             {
                 SetDefine(true);
                 return;
@@ -217,6 +256,11 @@ VisualEffectImporter:
                     .Replace(sourceAttributeLayout.Replace("\r\n", "\n"), sourceAttributeLayoutReplace.Replace("\r\n", "\n"))
                     .Replace(currentAttributeLayout.Replace("\r\n", "\n"), currentAttributeLayoutReplace.Replace("\r\n", "\n"));
 
+                // Modify VFXSerializer.cs
+                vfxSerializerFile = vfxSerializerFile
+                    .Replace(serializerReplace.Replace("\r\n", "\n"), serializer.Replace("\r\n", "\n"))
+                    .Replace(serializer.Replace("\r\n", "\n"), serializerReplace.Replace("\r\n", "\n"));
+
                 try
                 {
                     // Save VFXCodeGenerator.cs
@@ -224,6 +268,9 @@ VisualEffectImporter:
 
                     // Save VFXContextEditor.cs
                     SaveReadOnlyFile(vfxContextEditorPath, vfxContextEditorFile, true);
+
+                    // Save VFXSerializer.cs
+                    SaveReadOnlyFile(vfxSerializerPath, vfxSerializerFile, true);
 
                     // Add FluvioFXIntegration.cs
                     var integrationFilePath = $"{vfxPath}/Editor/FluvioFXIntegration.cs";
@@ -260,8 +307,7 @@ VisualEffectImporter:
         private static string GetPackagePath(string pkgName)
         {
             var packages =
-                ReflectionHelpers
-                .GetEditorType("Packages")
+                typeof(UnityEditor.PackageManager.PackageInfo)
                 .Invoke<UnityEditor.PackageManager.PackageInfo[]>("GetAll");
 
             foreach (var pkg in packages)
