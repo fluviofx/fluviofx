@@ -1,14 +1,16 @@
 {
-    "name": "Thinksquirrel.FluvioFX.Runtime",
-    "references": [],
+    "name": "FluvioFX.Install",
+    "references": [
+        "FluvioFX.ReflectionHelpers"
+    ],
     "optionalUnityReferences": [],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": [
-        "FLUVIOFX"
-    ]
+    "defineConstraints": []
 }

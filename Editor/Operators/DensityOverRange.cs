@@ -1,9 +1,9 @@
 using System.Linq;
-using Thinksquirrel.FluvioFX.Editor;
+using FluvioFX.Editor;
 using UnityEditor.VFX;
 using UnityEngine;
 
-namespace Thinksquirrel.FluvioFX.Editor.Operators
+namespace FluvioFX.Editor.Operators
 {
     [VFXInfo(category = "FluvioFX")]
     class DensityOverRange : VFXOperator

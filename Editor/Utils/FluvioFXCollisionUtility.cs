@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Thinksquirrel.FluvioFX;
-using Thinksquirrel.FluvioFX.Editor.Blocks;
+using FluvioFX;
+using FluvioFX.Editor.Blocks;
 using UnityEditor.VFX;
 using UnityEditor.VFX.Block;
 using UnityEngine;
 
-namespace Thinksquirrel.FluvioFX.Editor
+namespace FluvioFX.Editor
 {
     internal static class FluvioFXCollisionUtility
     {

@@ -7,7 +7,7 @@ using UnityEditor.VFX;
 using UnityEngine;
 using UnityEngine.Experimental.VFX;
 
-namespace Thinksquirrel.FluvioFX.Editor.Integrators
+namespace FluvioFX.Editor.Integrators
 {
     public enum IntegrationMode
     {

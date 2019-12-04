@@ -5,7 +5,7 @@ using UnityEditor.VFX;
 using UnityEngine;
 using UnityEngine.Experimental.VFX;
 
-namespace Thinksquirrel.FluvioFX.Editor
+namespace FluvioFX.Editor
 {
     [VFXType, Serializable]
     internal struct Fluid

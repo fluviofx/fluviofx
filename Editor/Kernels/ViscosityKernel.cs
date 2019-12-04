@@ -1,7 +1,7 @@
 using UnityEditor.VFX;
 using UnityEngine;
 
-namespace Thinksquirrel.FluvioFX.Editor.Kernels
+namespace FluvioFX.Editor.Kernels
 {
     sealed class ViscosityKernel : SmoothingKernel
     {

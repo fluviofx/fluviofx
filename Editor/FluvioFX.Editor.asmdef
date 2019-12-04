@@ -1,7 +1,8 @@
 {
-    "name": "Thinksquirrel.FluvioFX.Install",
+    "name": "FluvioFX.Editor",
     "references": [
-        "Thinksquirrel.FluvioFX.ReflectionHelpers"
+        "Unity.VisualEffectGraph.Editor",
+        "FluvioFX.ReflectionHelpers"
     ],
     "optionalUnityReferences": [],
     "includePlatforms": [
@@ -12,5 +13,7 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": []
+    "defineConstraints": [
+        "FLUVIOFX"
+    ]
 }

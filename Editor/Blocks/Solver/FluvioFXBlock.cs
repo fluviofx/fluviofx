@@ -7,7 +7,7 @@ using UnityEditor.VFX;
 using UnityEngine;
 using UnityEngine.Experimental.VFX;
 
-namespace Thinksquirrel.FluvioFX.Editor.Blocks
+namespace FluvioFX.Editor.Blocks
 {
     abstract class FluvioFXBlock : VFXBlock
     {

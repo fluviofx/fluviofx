@@ -6,7 +6,7 @@ using UnityEditor.VFX;
 using UnityEngine;
 using UnityEngine.Experimental.VFX;
 
-namespace Thinksquirrel.FluvioFX.Editor
+namespace FluvioFX.Editor
 {
     // HACK: Reflection stuffs
     internal static class FluvioFXAttribute

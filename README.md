@@ -18,7 +18,7 @@ First, make sure all required packages are installed. These *must* be installed 
 Once all required packages are added, add the following line to `dependencies` in your `manifest.json` (in the **Packages** subfolder of your Unity project):
 
 ```json
-"com.thinksquirrel.fluviofx": "https://github.com/thinksquirrel/fluviofx.git"
+"com.fluvio.fx": "https://github.com/fluviofx/fluviofx.git"
 ```
 
 Currently, FluvioFX requires a small patch that must be added to the Visual Effect Graph package before usage. This is needed in order to access some internal classes. Once imported, this process should happen automatically. A **FLUVIOFX** compilation file will then be automatically added to the current (and any future) build platforms, which will allow Unity to load the FluvioFX assembly.

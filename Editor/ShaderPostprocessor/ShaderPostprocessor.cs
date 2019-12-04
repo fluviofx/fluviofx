@@ -8,11 +8,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Thinksquirrel.FluvioFX.Editor;
-using Thinksquirrel.FluvioFX.Editor.Blocks;
+using FluvioFX.Editor;
+using FluvioFX.Editor.Blocks;
 using UnityEngine.Experimental.VFX;
 
-namespace Thinksquirrel.FluvioFX.Editor
+namespace FluvioFX.Editor
 {
     internal static class ShaderPostprocessor
     {

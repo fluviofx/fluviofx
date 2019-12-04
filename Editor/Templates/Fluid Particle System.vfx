@@ -258,7 +258,7 @@ VisualEffectResource:
       1\n#define VFX_USE_AGE_CURRENT 1\n#define VFX_HAS_INDIRECT_DRAW 1\n#define VFX_WORLD_SPACE
       1\n#include \"Packages/com.unity.visualeffectgraph/Shaders/RenderPipeline/HDRP/VFXDefines.hlsl\"\n\n\n\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
-      \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.thinksquirrel.fluviofx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
+      \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.fluvio.fx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
       attributeBuffer;\n\n#if VFX_USE_ALIVE_CURRENT\nRWStructuredBuffer<uint> deadListOut;\n#endif\n\n#if
       VFX_HAS_INDIRECT_DRAW\nRWStructuredBuffer<uint> indirectBuffer;\n#endif\n\nCBUFFER_START(updateParams)\n
       \   uint nbMax;\n\tuint dispatchWidth;\n\tuint systemSeed;\nCBUFFER_END\n\nvoid
@@ -305,7 +305,7 @@ VisualEffectResource:
       64\n#define VFX_USE_POSITION_CURRENT 1\n#define VFX_HAS_INDIRECT_DRAW 1\n#define
       VFX_WORLD_SPACE 1\n#include \"Packages/com.unity.visualeffectgraph/Shaders/RenderPipeline/HDRP/VFXDefines.hlsl\"\n\n\n\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
-      \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.thinksquirrel.fluviofx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
+      \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.fluvio.fx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
       attributeBuffer;\n\n#if VFX_USE_ALIVE_CURRENT\nRWStructuredBuffer<uint> deadListOut;\n#endif\n\n#if
       VFX_HAS_INDIRECT_DRAW\nRWStructuredBuffer<uint> indirectBuffer;\n#endif\n\nCBUFFER_START(updateParams)\n
       \   uint nbMax;\n\tuint dispatchWidth;\n\tuint systemSeed;\nCBUFFER_END\n\nvoid
@@ -342,7 +342,7 @@ VisualEffectResource:
       64\n#define VFX_USE_POSITION_CURRENT 1\n#define VFX_USE_NEIGHBORCOUNT_CURRENT
       1\n#define VFX_HAS_INDIRECT_DRAW 1\n#define VFX_WORLD_SPACE 1\n#include \"Packages/com.unity.visualeffectgraph/Shaders/RenderPipeline/HDRP/VFXDefines.hlsl\"\n\n\n\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
-      \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.thinksquirrel.fluviofx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
+      \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.fluvio.fx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
       attributeBuffer;\n\n#if VFX_USE_ALIVE_CURRENT\nRWStructuredBuffer<uint> deadListOut;\n#endif\n\n#if
       VFX_HAS_INDIRECT_DRAW\nRWStructuredBuffer<uint> indirectBuffer;\n#endif\n\nCBUFFER_START(updateParams)\n
       \   uint nbMax;\n\tuint dispatchWidth;\n\tuint systemSeed;\nCBUFFER_END\n\nvoid
@@ -397,7 +397,7 @@ VisualEffectResource:
       VFX_USE_NEIGHBORCOUNT_CURRENT 1\n#define VFX_USE_DENSITYPRESSURE_CURRENT 1\n#define
       VFX_HAS_INDIRECT_DRAW 1\n#define VFX_WORLD_SPACE 1\n#include \"Packages/com.unity.visualeffectgraph/Shaders/RenderPipeline/HDRP/VFXDefines.hlsl\"\n\n\n\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
-      \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.thinksquirrel.fluviofx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
+      \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.fluvio.fx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
       attributeBuffer;\n\n#if VFX_USE_ALIVE_CURRENT\nRWStructuredBuffer<uint> deadListOut;\n#endif\n\n#if
       VFX_HAS_INDIRECT_DRAW\nRWStructuredBuffer<uint> indirectBuffer;\n#endif\n\nCBUFFER_START(updateParams)\n
       \   uint nbMax;\n\tuint dispatchWidth;\n\tuint systemSeed;\nCBUFFER_END\n\nvoid
@@ -455,7 +455,7 @@ VisualEffectResource:
       VFX_USE_NORMAL_CURRENT 1\n#define VFX_HAS_INDIRECT_DRAW 1\n#define VFX_WORLD_SPACE
       1\n#include \"Packages/com.unity.visualeffectgraph/Shaders/RenderPipeline/HDRP/VFXDefines.hlsl\"\n\n\n\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
-      \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.thinksquirrel.fluviofx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
+      \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.fluvio.fx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
       attributeBuffer;\n\n#if VFX_USE_ALIVE_CURRENT\nRWStructuredBuffer<uint> deadListOut;\n#endif\n\n#if
       VFX_HAS_INDIRECT_DRAW\nRWStructuredBuffer<uint> indirectBuffer;\n#endif\n\nCBUFFER_START(updateParams)\n
       \   uint nbMax;\n\tuint dispatchWidth;\n\tuint systemSeed;\nCBUFFER_END\n\nvoid
@@ -513,7 +513,7 @@ VisualEffectResource:
       1\n#define VFX_USE_DENSITYPRESSURE_CURRENT 1\n#define VFX_USE_NORMAL_CURRENT
       1\n#define VFX_HAS_INDIRECT_DRAW 1\n#define VFX_WORLD_SPACE 1\n#include \"Packages/com.unity.visualeffectgraph/Shaders/RenderPipeline/HDRP/VFXDefines.hlsl\"\n\n\n\n#include
       \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
-      \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.thinksquirrel.fluviofx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
+      \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.fluvio.fx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
       attributeBuffer;\n\n#if VFX_USE_ALIVE_CURRENT\nRWStructuredBuffer<uint> deadListOut;\n#endif\n\n#if
       VFX_HAS_INDIRECT_DRAW\nRWStructuredBuffer<uint> indirectBuffer;\n#endif\n\nCBUFFER_START(updateParams)\n
       \   uint nbMax;\n\tuint dispatchWidth;\n\tuint systemSeed;\nCBUFFER_END\n\nvoid
@@ -602,7 +602,7 @@ VisualEffectResource:
       1\n#define VFX_USE_AGE_CURRENT 1\n#define VFX_HAS_INDIRECT_DRAW 1\n#define VFX_WORLD_SPACE
       1\n#include \"Packages/com.unity.visualeffectgraph/Shaders/RenderPipeline/HDRP/VFXDefines.hlsl\"\n\n\nCBUFFER_START(parameters)\n
       \   float dt_a;\n    uint3 PADDING_0;\nCBUFFER_END\n\n\n#include \"Packages/com.unity.visualeffectgraph/Shaders/Common/VFXCommonCompute.cginc\"\n#include
-      \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.thinksquirrel.fluviofx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
+      \"Packages/com.unity.visualeffectgraph/Shaders/VFXCommon.cginc\"\n#include \"Packages/com.fluvio.fx/Shaders/FluvioCompute.cginc\"\n\n\n\nRWByteAddressBuffer
       attributeBuffer;\n\n#if VFX_USE_ALIVE_CURRENT\nRWStructuredBuffer<uint> deadListOut;\n#endif\n\n#if
       VFX_HAS_INDIRECT_DRAW\nRWStructuredBuffer<uint> indirectBuffer;\n#endif\n\nCBUFFER_START(updateParams)\n
       \   uint nbMax;\n\tuint dispatchWidth;\n\tuint systemSeed;\nCBUFFER_END\n\nvoid
@@ -17043,15 +17043,15 @@ MonoBehaviour:
     m_Owner: {fileID: 8926484042661618582}
     m_Value:
       m_Type:
-        m_SerializableType: Thinksquirrel.FluvioFX.Editor.Fluid, Thinksquirrel.FluvioFX.Editor,
-          Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+        m_SerializableType: FluvioFX.Editor.Fluid, FluvioFX.Editor, Version=0.0.0.0,
+          Culture=neutral, PublicKeyToken=null
       m_SerializableObject: '{"SmoothingDistance":0.0,"ParticleMass":0.0,"Density":0.0,"MinimumDensity":0.0,"GasConstant":0.0,"Viscosity":0.0,"SurfaceTension":0.0,"BuoyancyCoefficient":0.0}'
     m_Space: 2147483647
   m_Property:
     name: Fluid
     m_serializedType:
-      m_SerializableType: Thinksquirrel.FluvioFX.Editor.Fluid, Thinksquirrel.FluvioFX.Editor,
-        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      m_SerializableType: FluvioFX.Editor.Fluid, FluvioFX.Editor, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
     attributes: []
   m_Direction: 0
   m_LinkedSlots:
@@ -17617,8 +17617,8 @@ MonoBehaviour:
   m_OutputSlots:
   - {fileID: 8926484042661618607}
   m_Type:
-    m_SerializableType: Thinksquirrel.FluvioFX.Editor.Fluid, Thinksquirrel.FluvioFX.Editor,
-      Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    m_SerializableType: FluvioFX.Editor.Fluid, FluvioFX.Editor, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
 --- !u!114 &8926484042661618598
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17649,15 +17649,15 @@ MonoBehaviour:
     m_Owner: {fileID: 8926484042661618597}
     m_Value:
       m_Type:
-        m_SerializableType: Thinksquirrel.FluvioFX.Editor.Fluid, Thinksquirrel.FluvioFX.Editor,
-          Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+        m_SerializableType: FluvioFX.Editor.Fluid, FluvioFX.Editor, Version=0.0.0.0,
+          Culture=neutral, PublicKeyToken=null
       m_SerializableObject: '{"SmoothingDistance":0.19062499701976777,"ParticleMass":7.241438865661621,"Density":998.2899780273438,"MinimumDensity":9.98289966583252,"GasConstant":0.009999999776482582,"Viscosity":0.029999999329447748,"SurfaceTension":0.7279999852180481,"BuoyancyCoefficient":0.0}'
     m_Space: 2147483647
   m_Property:
     name: 
     m_serializedType:
-      m_SerializableType: Thinksquirrel.FluvioFX.Editor.Fluid, Thinksquirrel.FluvioFX.Editor,
-        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      m_SerializableType: FluvioFX.Editor.Fluid, FluvioFX.Editor, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
     attributes: []
   m_Direction: 0
   m_LinkedSlots: []
@@ -18053,15 +18053,15 @@ MonoBehaviour:
     m_Owner: {fileID: 8926484042661618597}
     m_Value:
       m_Type:
-        m_SerializableType: Thinksquirrel.FluvioFX.Editor.Fluid, Thinksquirrel.FluvioFX.Editor,
-          Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+        m_SerializableType: FluvioFX.Editor.Fluid, FluvioFX.Editor, Version=0.0.0.0,
+          Culture=neutral, PublicKeyToken=null
       m_SerializableObject: '{"SmoothingDistance":0.19062499701976777,"ParticleMass":7.241438865661621,"Density":998.2899780273438,"MinimumDensity":9.98289966583252,"GasConstant":0.009999999776482582,"Viscosity":0.029999999329447748,"SurfaceTension":0.7279999852180481,"BuoyancyCoefficient":0.0}'
     m_Space: 2147483647
   m_Property:
     name: 
     m_serializedType:
-      m_SerializableType: Thinksquirrel.FluvioFX.Editor.Fluid, Thinksquirrel.FluvioFX.Editor,
-        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      m_SerializableType: FluvioFX.Editor.Fluid, FluvioFX.Editor, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
     attributes: []
   m_Direction: 1
   m_LinkedSlots:

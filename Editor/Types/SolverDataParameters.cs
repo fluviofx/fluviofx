@@ -1,6 +1,6 @@
 using System;
 
-namespace Thinksquirrel.FluvioFX.Editor
+namespace FluvioFX.Editor
 {
     [Flags]
     internal enum SolverDataParameters : uint

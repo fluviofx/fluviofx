@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEngine;
 
-namespace Thinksquirrel.FluvioFX.Editor
+namespace FluvioFX.Editor
 {
     public static class PackageInfo
     {
@@ -25,7 +25,7 @@ namespace Thinksquirrel.FluvioFX.Editor
 
                     foreach (var pkg in packages)
                     {
-                        if (pkg.name == "com.thinksquirrel.fluviofx")
+                        if (pkg.name == "com.fluvio.fx")
                         {
                             _packagePath = pkg.resolvedPath.Replace("\\", "/");
                             break;
@@ -39,7 +39,7 @@ namespace Thinksquirrel.FluvioFX.Editor
         {
             get
             {
-                return "Packages/com.thinksquirrel.fluviofx";
+                return "Packages/com.fluvio.fx";
             }
         }
 

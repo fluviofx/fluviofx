@@ -1,4 +1,4 @@
-namespace Thinksquirrel.FluvioFX.Editor
+namespace FluvioFX.Editor
 {
     public static class FluvioFXSettings
     {

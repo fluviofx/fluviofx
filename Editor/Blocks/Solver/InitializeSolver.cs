@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Thinksquirrel.FluvioFX.Editor;
-using Thinksquirrel.FluvioFX.Editor.Kernels;
+using FluvioFX.Editor;
+using FluvioFX.Editor.Kernels;
 using UnityEditor.VFX;
 using UnityEngine;
 
-namespace Thinksquirrel.FluvioFX.Editor.Blocks
+namespace FluvioFX.Editor.Blocks
 {
     [VFXInfo(category = "FluvioFX/Solver")]
     class InitializeSolver : FluvioFXBlock
