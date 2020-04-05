@@ -9,7 +9,10 @@
 
 uint mod_pos(int a, uint b)
 {
-    return (a % b + b) % b;
+    //return (a % b + b) % b;
+    float q = (float)a / (float)b;
+    uint p = (uint)(q * b);
+    return a - p;
 }
 
 // This isn't perfect, since we can't control our grid size in memory very well
