@@ -237,13 +237,12 @@ namespace FluvioFX.Editor.Blocks
                 return mass;
             }
         }
-#pragma warning disable 649
+
         public class InputProperties
         {
-            public Fluid Fluid;
-            public Vector Gravity;
+            public Fluid Fluid = default;
+            public Vector Gravity = default;
         }
-#pragma warning restore 649
 
         private bool hasPreviousPosition => GetData().IsCurrentAttributeWritten(FluvioFXAttribute.PreviousPosition);
 
@@ -317,6 +316,9 @@ if (age > lifetime)
 	uint index = id;
 	if (id < nbMax)
 	{{
+        Attributes attributes = (Attributes)0;
+		SourceAttributes sourceAttributes = (SourceAttributes)0;
+
         // Clear buckets
         for (uint bucketIndex = 0; bucketIndex < FLUVIO_MAX_BUCKET_COUNT; ++bucketIndex)
         {{
@@ -337,6 +339,9 @@ if (age > lifetime)
             {Load(VFXAttribute.Mass, "mass", "index")}
             {Load(VFXAttribute.Size, "size", "index")}
             {Load(FluvioFXAttribute.Force, "force", "index")}
+            // attributes.mass = asfloat(attributeBuffer.Load((index * 0x1 + 0x271000) << 2));
+            // attributes.size = asfloat(attributeBuffer.Load((index * 0x1 + 0x2AF800) << 2));
+            // attributes.force = asfloat(attributeBuffer.Load3((index * 0x4 + 0x177000) << 2));
 ";
                 if (hasPreviousPosition)
                 {
@@ -348,9 +353,12 @@ if (age > lifetime)
                 }
                 str += $@"
             {CallFunction()}
-            {Store(FluvioFXAttribute.Force, "force", "index")}
             {Store(VFXAttribute.Mass, "mass", "index")}
             {Store(VFXAttribute.Size, "size", "index")}
+            {Store(FluvioFXAttribute.Force, "force", "index")}
+            // attributeBuffer.Store((index * 0x1 + 0x271000) << 2,asuint(attributes.mass));
+            // attributeBuffer.Store((index * 0x1 + 0x2AF800) << 2,asuint(attributes.size));
+            // attributeBuffer.Store3((index * 0x4 + 0x177000) << 2,asuint(attributes.force));
 ";
                 str += $@"
 #if VFX_HAS_INDIRECT_DRAW";

@@ -6,7 +6,7 @@ using System.Text;
 using FluvioFX.Editor.Integrators;
 using UnityEditor.VFX;
 using UnityEngine;
-using UnityEngine.Experimental.VFX;
+using UnityEngine.VFX;
 
 namespace FluvioFX.Editor.Blocks
 {

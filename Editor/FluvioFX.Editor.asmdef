@@ -2,6 +2,7 @@
     "name": "FluvioFX.Editor",
     "references": [
         "Unity.VisualEffectGraph.Editor",
+        "Unity.VisualEffectGraph.Runtime",
         "FluvioFX.ReflectionHelpers"
     ],
     "optionalUnityReferences": [],
