@@ -2,14 +2,18 @@
 
 ![FluvioFX logo](./Documentation~/images/logo.png)
 
+## This is not my project
+
+This is not my project but I have updated it as it seems to be abandoned. It now works fine with Unity 2019.3.38f1.
+
 ## 🚧 Active development 🚧
 
 FluvioFX is currently in early active development. While we will try to maintain backwards compatibility, until 1.0 certain features may be added or removed at any time. Use in larger production projects with care.
 
 ## Requirements
 
-- Unity 2019.2 or newer
-- Visual Effect Graph 6.9.1 or newer
+- Unity 2019.3 or newer
+- Visual Effect Graph 7.1.8 or newer
 
 ## Installation
 
@@ -18,7 +22,7 @@ First, make sure all required packages are installed. These *must* be installed 
 Once all required packages are added, add the following line to `dependencies` in your `manifest.json` (in the **Packages** subfolder of your Unity project):
 
 ```json
-"com.fluvio.fx": "https://github.com/fluviofx/fluviofx.git"
+"com.fluvio.fx": "https://github.com/mjducharme/fluviofx.git"
 ```
 
 Currently, FluvioFX requires a small patch that must be added to the Visual Effect Graph package before usage. This is needed in order to access some internal classes. Once imported, this process should happen automatically. A **FLUVIOFX** compilation file will then be automatically added to the current (and any future) build platforms, which will allow Unity to load the FluvioFX assembly.
