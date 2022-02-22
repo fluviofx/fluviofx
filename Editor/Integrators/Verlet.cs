@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using UnityEditor.VFX;
 using UnityEngine;
-using UnityEngine.Experimental.VFX;
+using UnityEngine.VFX;
 
 namespace FluvioFX.Editor.Integrators
 {

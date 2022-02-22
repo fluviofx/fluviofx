@@ -142,7 +142,7 @@ namespace FluvioFX.Editor
     float3 v = 0;
     if (projVelocity < 0)
     {{
-        v -= ((1 + Elasticity) * projVelocity) * n;
+        v -= ((1 + Bounce) * projVelocity) * n;
     }}
     v -= Friction * tangentVelocity;
 
