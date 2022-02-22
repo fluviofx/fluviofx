@@ -40,6 +40,13 @@ namespace FluvioFX.Editor
             { @",  /\*inout \*/attributes.neighbors_[0-9]+", "" },
             { $@"uint attributes.neighbors_[0-9]+ = \(attributeBuffer\.Load\(\(index \* 0x[0-9A-F]+ \+ 0x[0-9A-F]+\) << [0-9]+\)\);{"\n\t"}*", "" },
             { $@"attributeBuffer\.Store\(\(index \* 0x[0-9A-F]+ \+ 0x[0-9A-F]+\) << [0-9]+,asuint\(attributes.neighbors_[0-9]+\)\);{"\n\t"}*", "" },
+
+
+            // Fix force, mass, size, age, lifetime attributes (remove "attribute." prefix)
+            { @"index,  /\*inout \*/attributes.force", "index,  /*inout */force" },
+            { @"force,  /\*inout \*/attributes.mass", "force,  /*inout */mass" },
+            { @"mass,  /\*inout \*/attributes.size, attributes.age, attributes.lifetime", "mass,  /*inout */size, age, lifetime" },
+            { @"size, age, lifetime,  /\*inout \*/attributes.alive", "size, age, lifetime,  /*inout */alive" },
         };
         /* fixformat ignore:end */
 
