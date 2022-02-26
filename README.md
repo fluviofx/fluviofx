@@ -4,7 +4,7 @@
 
 ## This is not my project
 
-This is not my project but I have updated as it may have been abandoned. Before my latest updates it only worked with Unity 2019.2 and below. It now works fine with Unity 2020.3.38f1. If the original authors have updated it since, please ignore this repo!
+This is not my project but I have updated it to work with newer Unity versions. Before my latest updates it only worked with Unity 2019.2 and below. It now works fine with Unity 2020.3.28f1. I have done a pull request to fix the original. If the original repo has been updated since to fix this compatibility, please ignore this repo!
 
 ## 🚧 Active development 🚧
 
