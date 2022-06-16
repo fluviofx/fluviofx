@@ -237,6 +237,7 @@ namespace FluvioFX.Editor.Blocks
                 return mass;
             }
         }
+
 #pragma warning disable 649
         public class InputProperties
         {
@@ -351,6 +352,7 @@ if (age > lifetime)
             {Store(FluvioFXAttribute.Force, "force", "index")}
             {Store(VFXAttribute.Mass, "mass", "index")}
             {Store(VFXAttribute.Size, "size", "index")}
+
 ";
                 str += $@"
 #if VFX_HAS_INDIRECT_DRAW";

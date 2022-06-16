@@ -6,13 +6,13 @@ using UnityEngine;
 namespace FluvioFX.Editor.Blocks
 {
     [VFXInfo(category = "FluvioFX/Collision")]
-    class CollisionCylinder : UnityEditor.VFX.Block.CollisionCylinder, ICollisionSettings
+    class CollisionCone : UnityEditor.VFX.Block.CollisionCone, ICollisionSettings
     {
         public override string name
         {
             get
             {
-                return "Fluid Collider (Cylinder)";
+                return "Fluid Collider (Cone)";
             }
         }
 

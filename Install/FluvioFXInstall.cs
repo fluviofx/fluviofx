@@ -51,14 +51,14 @@ VisualEffectImporter:
             }
             // END FluvioFX";
 
-        private const string codeGenEvent = @"return stringBuilder;
-        }";
-        private const string codeGenEventReplace = @"return stringBuilder;
-        }
+        private const string codeGenEvent = @"static public StringBuilder Build(";
+        private const string codeGenEventReplace = @"
 
         // START FluvioFX
         public static event Func<VFXContext, StringBuilder, StringBuilder> OnGenerateCode;
-        // END FluvioFX";
+        // END FluvioFX
+
+        static public StringBuilder Build(";
 
         private const string attributeSummary = @"foreach (var attr in attributes)
                     {";
